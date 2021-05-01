@@ -30,8 +30,8 @@ export function lineEdgeBR2(lines: Line[]) {
             pointCount++;
         }
 
-        if (end - extend - 1 > value)
-            throw new Error(`lineEdgeBR too big ${extend} ${end} ${value}`);
+        if (pointCount > value)
+            throw new Error(`lineEdgeBR too big ${pointCount} ${value}`);
 
         line.addDots(extend + value + 1, end);
 

@@ -29,8 +29,8 @@ export function lineEdgeTL2(lines: Line[]) {
             pointCount++;
         }
 
-        if (extend - start - 1 > value)
-            throw new Error(`lineEdgeTL too big ${extend} ${start} ${value}`);
+        if (pointCount > value)
+            throw new Error(`lineEdgeTL too big ${pointCount} ${value}`);
 
         line.addDots(start, extend - value - 1);
 

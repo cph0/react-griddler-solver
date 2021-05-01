@@ -1,5 +1,6 @@
 import 'regenerator-runtime/runtime';
-import { Item, Block } from "../interfaces";
+import { Item } from "../interfaces";
+import Block from './Block';
 
 export class Index<T> {
     private indexes: Map<string, Map<any, number>>;
@@ -30,13 +31,41 @@ export class Index<T> {
 
 }
 
+export class LineSegment {
+    private readonly _forward: boolean;
 
+    public readonly index: number;
+    public readonly item: Item | null;
+    public readonly equality: boolean;
+
+    constructor(item: Item | null, equality: boolean, forward = false) {
+        this._forward = forward;
+
+        this.index = item ? item.index : forward ? 999 : -1;
+        this.item = item;
+        this.equality = equality;
+    }
+
+    with(ls: LineSegment) {
+        return [Math.min(this.index, ls.index), Math.max(this.index, ls.index)];
+    }
+}
+
+//export class Range {
+//    private _items: Item[];
+
+//    constructor() {
+
+//    }
+//}
 
 export default class Line {
     private readonly _lineIndex: number;
     private _lineValue: number | undefined;
     private _minItem: number | undefined;
     private _maxItem: number | undefined;
+    private _itemsOneValue: boolean | undefined;
+    private _itemsUnique: boolean | undefined;
     private _pairLines: Map<number, Line> = new Map();
     private readonly _gapsBySize: Map<number, Set<number>>;
     private readonly _gapsByStart: Map<number, Block>;
@@ -89,16 +118,26 @@ export default class Line {
         return this._maxItem;
     }
 
+    get firstItem() {
+        return this.items[0];
+    }
+
     get lastItem() {
         return this.items[this.lineItems - 1];
     }
 
     get itemsOneValue() {
-        return new Set(this.items.map(m => m.value)).size === 1;
+        if (this._itemsOneValue === undefined)
+            this._itemsOneValue = new Set(this.items.map(m => m.value)).size === 1;
+
+        return this._itemsOneValue;
     }
 
     get itemsUnique() {
-        return new Set(this.items.map(m => m.value)).size === this.items.length;
+        if (this._itemsUnique === undefined)
+            this._itemsUnique = new Set(this.items.map(m => m.value)).size === this.items.length;
+
+        return this._itemsUnique;
     }
 
     get firstGap() {
@@ -156,8 +195,45 @@ export default class Line {
         return this.items.filter(f => f.index >= start && f.index <= end);
     }
 
-    *getGaps() {
+    *getGaps(includeItems = false) {
+        let item = 0;
+        let equality = true;
+
         for (let i = 0; i < this.lineLength; i++) {
+            const gap = this._gapsByStart.get(i);
+
+            if (gap) {
+                const theItem = item < this.lineItems ? this.items[item] : null;
+                yield [gap, new LineSegment(theItem, equality, true)] as [Block, LineSegment];
+
+                if (includeItems) {
+
+                    let sum = 0;
+                    let itemShift = 0;
+
+                    for (let i = item; i < this.lineItems; i++) {
+                        sum += this.items[i].value;
+
+                        if (sum <= gap.size) {
+                            itemShift++;
+                        }
+                        else
+                            break;
+
+                        sum += this.dotCount(i);
+                    }
+
+                    if (gap.points.size < gap.size && (itemShift > 1 || (itemShift === 1 && !gap.points.size)))
+                        equality = false;
+
+                    item += itemShift;
+                }
+            }
+        }
+    }
+
+    *getGapsB(pos: number) {
+        for (let i = this.lineLength - 1; i >= pos; i--) {
             const gap = this._gapsByStart.get(i);
             if (gap)
                 yield gap;
@@ -171,53 +247,72 @@ export default class Line {
         }
     }
 
-    getItemsAtPosition2(pos: number) {
+    getItemsAtPosition2() {
         let item = 0;
         let valid = true;
         let equality = true;
 
-        for (const gap of this.getGaps()) {
-            if (!gap.canStartWith(this.items[item]))
+        for (const [gap] of this.getGaps()) {
+
+            while (!gap.canStartWith(this.items[item])) {
                 item--;
-            else {
-                if (gap.points.has(gap.start))
-                    item++;
-            }
-        }
-
-        return { valid, equality, item };
-    }
-
-    getItemsAtPosition(pos: number) {
-        let item = pos;
-        let valid = true;
-        let equality = true;
-
-        for (const gap of this.getGaps()) {
-            let sum = 0;
-            let itemShift = 0;
-
-            for (let i = item; i < this.lineItems - 1; i++) {
-                sum += this.items[i].value;
-
-                if (sum <= gap.end - gap.start - 1) {
-                    itemShift++;
-                }
-
-                sum += this.dotCount(i);
             }
 
-            if (gap.points.size < gap.end - gap.start - 1 && (itemShift > 1 || (itemShift === 1 && gap.points.size)))
+            if (gap.isFull)
+                item++;
+            else if (gap.hasPoints && gap.size === this.items[item].value)
+                item++;
+            else if (gap.size < this.items[item].value)
+                continue;
+            else if (gap.hasFirstPoint) {
+                item++;
                 equality = false;
+            }
+            else {
+                //const sum = this.sum(true, item);
 
-            item += itemShift;
-
+                equality = false;
+            }
         }
 
         if (item >= this.lineLength)
             valid = false;
 
         return { valid, equality, item };
+    }
+
+    getItemsAtPositionB(pos: number) {
+        let item = this.lineItems - 1;
+        let valid = true;
+        let equality = true;
+
+        for (const gap of this.getGapsB(pos)) {
+            let sum = 0;
+            let itemShift = 0;
+
+            for (let i = item; i >= 0; i--) {
+                sum += this.items[i].value;
+
+                if (sum <= gap.size) {
+                    itemShift++;
+                }
+                else
+                    break;
+
+                sum += this.dotCountB(i);
+            }
+
+            if (gap.points.size < gap.size && (itemShift > 1 || (itemShift === 1 && !gap.points.size)))
+                equality = false;
+
+            item -= itemShift;
+        }
+
+        if (item < 0)
+            valid = false;
+
+        const theItem = valid ? this.items[item] : null;        
+        return new LineSegment(theItem, equality);
     }
 
     *getGapsBySize(size: number) {
@@ -274,7 +369,7 @@ export default class Line {
                     this._gapsBySize.delete(size);
             }
 
-            if (leftGapSize > 0) {                
+            if (leftGapSize > 0) {
                 if (gapsByLeftSize)
                     gapsByLeftSize.add(start);
                 else
@@ -304,39 +399,6 @@ export default class Line {
         }
     }
 
-    //private findBlockAtPos(index: number) {
-    //    let block;
-
-    //    for (let i = index; i >= -1; i--) {
-    //        block = this._blocksByStart.get(i);
-
-    //        if (block)
-    //            break;
-    //    }
-
-    //    return block;
-    //}
-
-    //private addBlock(index: number, colour: string, item?: number) {
-    //    const leftSolid = this.points.get(index - 1);
-    //    const rightBlock = this._blocksByStart.get(index + 1);
-    //    let end = index;
-
-    //    if (rightBlock && rightBlock.colour === colour)
-    //        end = rightBlock.end;
-
-    //    if (leftSolid === colour) {
-    //        const leftBlock = this.findBlockAtPos(index - 1);
-
-    //        if (leftBlock) {
-    //            this._blocksByStart.delete(index + 1);
-    //            leftBlock.end = end;
-    //        }
-    //    }
-    //    else
-    //        this._blocksByStart.set(index, new Block(index, end, colour, item));
-    //}
-
     addPoints(start: number, end: number, colour: string, itemIndex?: number) {
         for (let i = start; i <= end; i++)
             this.addPoint(i, colour, itemIndex);
@@ -347,9 +409,6 @@ export default class Line {
 
         if (gap)
             gap.addPoint(index, colour, itemIndex);
-
-        //this.points.set(index, colour);
-        //this.addBlock(index, colour, itemIndex);
 
         if (!fromPair) {
             const pairLine = this._pairLines.get(index);
