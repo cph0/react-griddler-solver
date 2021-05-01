@@ -1,7 +1,8 @@
 import 'regenerator-runtime/runtime';
+import { Line } from '../classes';
 //import { renderHook } from '@testing-library/react-hooks'
 import { fullLine, overlapLine } from '../helpers/index';
-import { Item, Line } from '../interfaces';
+import { Item } from '../interfaces';
 
 function createData() {
     const data = {
