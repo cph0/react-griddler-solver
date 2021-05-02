@@ -251,7 +251,7 @@ export default class Line {
     *getBlocks() {
         for (const gap of this._gapsByStart) {
             for (const block of gap[1].getBlocks())
-                yield block;
+                yield [block, gap[1]];
         }
     }
 
@@ -481,7 +481,7 @@ export default class Line {
         let currentItem = 0;
         let reachIndex = 0;
 
-        for (const block of this.getBlocks()) {
+        for (const [block] of this.getBlocks()) {
 
             if (lastBlock && currentItem < this.lineItems) {
                 const reachIndexCurrent = lastBlock.start + this.items[currentItem].value - 1;

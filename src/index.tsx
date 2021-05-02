@@ -147,53 +147,12 @@ export function LeftLabels({ lines, width, depth, squareSize }: LabelsProps) {
 
 export default function Griddler() {
 
-    const [sG, setSg] = useState(0);
+    const [sG, setSg] = useState(5);
 
     const griddler = griddlers[sG];
-
     const width = griddler.width;
     const height = griddler.height;
     const depth = 4;
-
-    const data = {
-        rows: [
-            [1],
-            [2],
-            [1, 3],
-            [5],
-            [5],
-            [2, 2],
-            [2, 1, 1],
-            [1, 1]
-        ],
-        cols: [
-            [1, 1],
-            [5],
-            [3],
-            [2],
-            [2],
-            [8],
-            [2, 1],
-            [1, 1]
-        ],
-        grid: null
-    };
-
-    const data2 = {
-        rows: [
-            [1, 1],
-            [2],
-            [1, 1],
-            [1, 1]
-        ],
-        cols: [
-            [2],
-            [1],
-            [1],
-            [4]
-        ]
-    }
-
     const rows: Line[] = [];
     const cols: Line[] = [];
 
