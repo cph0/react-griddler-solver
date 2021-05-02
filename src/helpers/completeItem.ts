@@ -6,7 +6,7 @@ export default function completeItem(lines: Line[]) {
         const isLineIsolated = line.isLineIsolated();
         let blockCount = 0;
 
-        for (const block of line.getBlocks()) {
+        for (const [block] of line.getBlocks()) {
 
             //max item
             if (line.maxItem === block.size) {

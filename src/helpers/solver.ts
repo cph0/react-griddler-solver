@@ -1,7 +1,7 @@
 import { Line } from "../classes/index";
 import {
     fullLine, overlapLine, fullLineDots,
-    lineEdgeTL2, lineEdgeBR2, lineGaps, completeItem
+    lineEdgeTL2, lineEdgeBR2, lineGaps, completeItem, lineBlocks
 } from './index';
 
 export function isComplete(lines: Line[]) {
@@ -43,18 +43,14 @@ export default function solve(rows: Line[], cols: Line[]) {
         lineEdgeBR2(rows);
         lineEdgeBR2(cols);
 
-
         lineGaps(rows);
-
-
-
-
         lineGaps(cols);
-        //if (count === 1)
-        //    break;
          
         completeItem(rows);
         completeItem(cols);
+
+        lineBlocks(rows);
+        lineBlocks(cols);
        
         count++;
 
