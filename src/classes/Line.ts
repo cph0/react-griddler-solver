@@ -203,6 +203,7 @@ export default class Line {
             const gap = this._gapsByStart.get(i);
 
             if (gap) {
+
                 const theItem = item < this.lineItems ? this.items[item] : null;
                 yield [gap, new LineSegment(theItem, equality, true)] as [Block, LineSegment];
 
@@ -223,8 +224,15 @@ export default class Line {
                         sum += this.dotCount(i);
                     }
 
-                    if (gap.points.size < gap.size && (itemShift > 1 || (itemShift === 1 && !gap.points.size)))
+                    if (!gap.isFull && (itemShift > 1 || (itemShift === 1 && !gap.points.size)))
                         equality = false;
+
+                    if (item >= this.lineItems && gap.isFull && this.itemsUnique) {
+                        const temp = this.items.find(f => f.value === gap.size);
+                        console.log(this, itemShift, item, temp, gap);
+                        item = temp ? temp.index + 1 : -1;
+                        equality = !!temp;
+                    }
 
                     item += itemShift;
                 }
@@ -442,7 +450,7 @@ export default class Line {
     sum(includeDots = true, start = 0, end = this.lineItems - 1) {
         return this.items.reduce((acc, item, index) => {
             if (index >= start && index <= end)
-                return acc + item.value + (includeDots ? this.dotCount(index) : 0);
+                return acc + item.value + (includeDots && index < end ? this.dotCount(index) : 0);
             else
                 return acc;
         }, 0);

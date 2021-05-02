@@ -28,7 +28,7 @@ export default function solve(rows: Line[], cols: Line[]) {
     overlapLine(cols);
 
     let count = 0;
-    const loopCount = 2;
+    const loopCount = 3;
 
     while (!isComplete(rows)) {
         const ptsCount = rows.reduce((acc, m) => acc + m.points.size, 0);
@@ -50,16 +50,16 @@ export default function solve(rows: Line[], cols: Line[]) {
 
 
         lineGaps(cols);
-        if (count === 1)
-            break;
-        
+        //if (count === 1)
+        //    break;
+         
         completeItem(rows);
         completeItem(cols);
        
         count++;
 
-        if (count === loopCount)
-            break;
+        //if (count === loopCount)
+        //    break;
 
         if (ptsCount === rows.reduce((acc, m) => acc + m.points.size, 0)
             && dtsCount === rows.reduce((acc, m) => acc + m.dots.size, 0))
