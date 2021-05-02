@@ -1,8 +1,8 @@
-import React, { CSSProperties } from 'react';
+import React, { CSSProperties, useState } from 'react';
 import solve from './helpers/solver';
 import { Item, Point } from './interfaces';
 import { Line } from './classes/index';
-import Bird10x10 from './data/Bird10x10.json';
+import { griddlers } from './data/index';
 
 interface GridProps {
     width: number;
@@ -147,8 +147,12 @@ export function LeftLabels({ lines, width, depth, squareSize }: LabelsProps) {
 
 export default function Griddler() {
 
-    const width = Bird10x10.width;
-    const height = Bird10x10.height;
+    const [sG, setSg] = useState(0);
+
+    const griddler = griddlers[sG];
+
+    const width = griddler.width;
+    const height = griddler.height;
     const depth = 4;
 
     const data = {
@@ -193,15 +197,13 @@ export default function Griddler() {
     const rows: Line[] = [];
     const cols: Line[] = [];
 
-
-
-    Bird10x10.rows.forEach((f, i) => {
+    griddler.rows.forEach((f: number[], i: number) => {
         const items: Item[] = f.map((value, index) => ({ index, value, colour: "black" }));
         const line = new Line(width, i, items);
         rows.push(line);
     })
 
-    Bird10x10.cols.forEach((f, i) => {
+    griddler.cols.forEach((f: number[], i: number) => {
         const items: Item[] = f.map((value, index) => ({ index, value, colour: "black" }));
         const line = new Line(height, i, items);
         cols.push(line);
@@ -242,26 +244,52 @@ export default function Griddler() {
         return [...acc, ...dts];
     }, [] as { x: number; y: number }[]);
 
+    const onSelectGriddler = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setSg(parseInt(event.target.value));
+    }
+
+    const renderGriddlerList = () => {
+        let html = null;
+        let items = [];
+
+        items = griddlers.map((g, i) => <option key={g.name} value={i}>{g.name}</option>);
+
+        html = (
+            <select className="form-control" onChange={(e) => onSelectGriddler(e)} value={sG}>
+                {items}
+            </select>
+        );
+
+        return html;
+    }
+
     const square = (depth * 20) + "px";
 
     return (
-        <div className="row">
-            <div className="col" style={{ overflowY: "auto", height: "calc(78vh)" }}>
-                <div style={{
-                    position: "relative", display: "inline-block",
-                    width: square, height: square
-                }}>
-                    <TopLabels width={width} depth={depth} squareSize={squareSize}
-                        lines={cols} />
-                    <LeftLabels width={width} depth={depth} squareSize={squareSize}
-                        lines={rows} />
-                </div>
-                <div style={{ position: "relative", display: "inline-block" }}>
-                    <Grid width={width} height={height} squareSize={squareSize} />
-                    <Points points={points} squareSize={squareSize} />
-                    <Dots points={dots} squareSize={squareSize} />
+        <>
+            <div className="row">
+                <div className="col-md-6">
+                    {renderGriddlerList()}
                 </div>
             </div>
-        </div>
+            <div className="row">
+                <div className="col" style={{ overflowY: "auto", height: "calc(78vh)" }}>
+                    <div style={{
+                        position: "relative", display: "inline-block",
+                        width: square, height: square
+                    }}>
+                        <TopLabels width={width} depth={depth} squareSize={squareSize}
+                            lines={cols} />
+                        <LeftLabels width={width} depth={depth} squareSize={squareSize}
+                            lines={rows} />
+                    </div>
+                    <div style={{ position: "relative", display: "inline-block" }}>
+                        <Grid width={width} height={height} squareSize={squareSize} />
+                        <Points points={points} squareSize={squareSize} />
+                        <Dots points={dots} squareSize={squareSize} />
+                    </div>
+                </div>
+            </div>
+        </>
     );
 }

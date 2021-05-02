@@ -4,7 +4,9 @@
     "\\src",
     "\\src\\classes",
     "\\src\\data",
-    "\\src\\helpers"
+    "\\src\\helpers",
+    "\\src\\renderers",
+    "\\src\\__tests__"
   ],
   "SelectedNode": "\\src\\classes\\Line.ts",
   "PreviewInSolutionExplorer": false

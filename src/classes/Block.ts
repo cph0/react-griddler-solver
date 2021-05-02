@@ -117,8 +117,10 @@ export default class Block {
 
         const points: [number, string][] = [];
         this.points.forEach((f, k) => {
-            if (k > index)
+            if (k > index) {
                 points.push([k, f]);
+                this.points.delete(k);
+            }
         });
 
         rightBlock.setBlocks(new Map(blocks));
