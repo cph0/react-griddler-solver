@@ -172,7 +172,7 @@ interface Temp {
     colour: string;
 }
 
-interface GriddlerFile {
+export interface GriddlerFile {
     name?: string;
     width: number;
     height: number;
