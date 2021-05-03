@@ -31,7 +31,7 @@ export class Index<T> {
 
 }
 
-export class LineSegment {
+class LineSegment {
     private readonly _forward: boolean;
 
     public readonly index: number;
@@ -69,7 +69,6 @@ export default class Line {
     private _pairLines: Map<number, Line> = new Map();
     private readonly _gapsBySize: Map<number, Set<number>>;
     private readonly _gapsByStart: Map<number, Block>;
-    //private readonly _blocksByStart: Map<number, Block>;
     //private _itemByPos: Map<number, number[]>;
 
     public readonly items: Item[];
@@ -179,8 +178,6 @@ export default class Line {
 
         this._gapsBySize = new Map([[lineLength, new Set([0])]]);
         this._gapsByStart = new Map([[0, new Block(0, lineLength - 1)]]);
-
-        //this._blocksByStart = new Map();
     }
 
     isItemHere(pos: number, linePos: number, itemIndex: number) {
@@ -229,7 +226,6 @@ export default class Line {
 
                     if (item >= this.lineItems && gap.isFull && this.itemsUnique) {
                         const temp = this.items.find(f => f.value === gap.size);
-                        console.log(this, itemShift, item, temp, gap);
                         item = temp ? temp.index + 1 : -1;
                         equality = !!temp;
                     }
@@ -310,7 +306,7 @@ export default class Line {
                 sum += this.dotCountB(i);
             }
 
-            if (gap.points.size < gap.size && (itemShift > 1 || (itemShift === 1 && !gap.points.size)))
+            if (!gap.isFull && (itemShift > 1 || (itemShift === 1 && !gap.points.size)))
                 equality = false;
 
             item -= itemShift;

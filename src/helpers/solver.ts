@@ -44,18 +44,22 @@ export default function solve(rows: Line[], cols: Line[]) {
         lineEdgeBR2(cols);
 
         lineGaps(rows);
+
+
         lineGaps(cols);
-         
+        
         completeItem(rows);
         completeItem(cols);
+        if (count === 2)
+            break;
 
         lineBlocks(rows);
         lineBlocks(cols);
        
         count++;
 
-        //if (count === loopCount)
-        //    break;
+        if (count === loopCount)
+            break;
 
         if (ptsCount === rows.reduce((acc, m) => acc + m.points.size, 0)
             && dtsCount === rows.reduce((acc, m) => acc + m.dots.size, 0))

@@ -23,7 +23,8 @@ interface PointsProps {
 interface LabelsProps {
     lines: Line[];
     width: number;
-    depth: number;
+    rowDepth: number;
+    colDepth: number;
     squareSize: number;
 }
 
@@ -87,13 +88,13 @@ export function Dots({ points, squareSize }: PointsProps) {
     return <>{points.map(m => <Dot key={`${m.x}_${m.y}`} pt={m} squareSize={squareSize} />)}</>;
 }
 
-export function TopLabels({ lines, width, depth, squareSize }: LabelsProps) {
+export function TopLabels({ lines, width, rowDepth, colDepth, squareSize }: LabelsProps) {
 
     const lbls = [];
 
     for (let i = 0; i < width; i++) {
-        for (let c = 0; c < depth; c++) {
-            const left = (depth * squareSize) + (i * squareSize);
+        for (let c = 0; c < colDepth; c++) {
+            const left = (rowDepth * squareSize) + (i * squareSize);
             const item = lines[i].items[c];
 
             if (item) {
@@ -116,14 +117,14 @@ export function TopLabels({ lines, width, depth, squareSize }: LabelsProps) {
     return <>{lbls}</>;
 }
 
-export function LeftLabels({ lines, width, depth, squareSize }: LabelsProps) {
+export function LeftLabels({ lines, width, rowDepth, colDepth, squareSize }: LabelsProps) {
 
     const lbls = [];
 
     for (let i = 0; i < width; i++) {
-        for (let c = 0; c < depth; c++) {
-            const top = (depth * squareSize) + (i * squareSize);
-            const item = lines[i].items[c];
+        for (let c = 0; c < rowDepth; c++) {
+            const top = (colDepth * squareSize) + (i * squareSize);
+            const item = lines[i] ? lines[i].items[c] : null;
 
             if (item) {
                 lbls.push((
@@ -147,12 +148,13 @@ export function LeftLabels({ lines, width, depth, squareSize }: LabelsProps) {
 
 export default function Griddler() {
 
-    const [sG, setSg] = useState(5);
+    const [sG, setSg] = useState(51);
 
     const griddler = griddlers[sG];
     const width = griddler.width;
     const height = griddler.height;
-    const depth = 4;
+    const rowDepth = griddler.rowDepth;
+    const colDepth = griddler.colDepth;
     const rows: Line[] = [];
     const cols: Line[] = [];
 
@@ -222,8 +224,6 @@ export default function Griddler() {
         return html;
     }
 
-    const square = (depth * 20) + "px";
-
     return (
         <>
             <div className="row">
@@ -235,11 +235,13 @@ export default function Griddler() {
                 <div className="col" style={{ overflowY: "auto", height: "calc(78vh)" }}>
                     <div style={{
                         position: "relative", display: "inline-block",
-                        width: square, height: square
+                        width: (rowDepth * squareSize) + "px", height: (colDepth * squareSize) + "px"
                     }}>
-                        <TopLabels width={width} depth={depth} squareSize={squareSize}
+                        <TopLabels width={width} rowDepth={rowDepth} colDepth={colDepth}
+                            squareSize={squareSize}
                             lines={cols} />
-                        <LeftLabels width={width} depth={depth} squareSize={squareSize}
+                        <LeftLabels width={width} rowDepth={rowDepth} colDepth={colDepth}
+                            squareSize={squareSize}
                             lines={rows} />
                     </div>
                     <div style={{ position: "relative", display: "inline-block" }}>
