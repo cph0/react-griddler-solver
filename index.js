@@ -5,7 +5,7 @@ import { griddlers } from './src/data/index';
 
 function App() {
 
-    const [sG, setSg] = useState(51);
+    const [sG, setSg] = useState(1);
     const griddler = griddlers[sG];
 
     const onSelectGriddler = (event) => {
@@ -35,8 +35,8 @@ function App() {
                 </div>
             </div>
             <div className="row">
-                <div className="col" style={{ overflowY: "auto", height: "calc(78vh)" }}>
-                    <Griddler griddler={griddler} />
+                <div className="col" style={{ overflowY: "auto", height: "calc(78vh)" }}>                    
+                    {griddlers.map(griddler => <Griddler griddler={griddler} />)}
                 </div>
             </div>
         </>

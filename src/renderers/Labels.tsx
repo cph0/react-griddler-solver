@@ -38,13 +38,13 @@ export function TopLabels({ lines, width, rowDepth, colDepth, squareSize }: Labe
     return <>{lbls}</>;
 }
 
-export function LeftLabels({ lines, width, rowDepth, colDepth, squareSize }: LabelsProps) {
+export function LeftLabels({ lines, width, rowDepth, squareSize }: LabelsProps) {
 
     const lbls = [];
 
     for (let i = 0; i < width; i++) {
         for (let c = 0; c < rowDepth; c++) {
-            const top = (colDepth * squareSize) + (i * squareSize);
+            const top = (i * squareSize);
             const item = lines[i] ? lines[i][c] : null;
 
             if (item) {

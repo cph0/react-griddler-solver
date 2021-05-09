@@ -57,7 +57,7 @@ export default function solve(rs: Item[][], cs: Item[][]) {
     overlapLine(cols);
 
     let count = 0;
-    const loopCount = 3;
+    const loopCount = 9;
 
     while (!isComplete(rows)) {
         const ptsCount = rows.reduce((acc, m) => acc + m.points.size, 0);
@@ -68,7 +68,7 @@ export default function solve(rs: Item[][], cs: Item[][]) {
 
         lineEdgeTL2(rows);
         lineEdgeTL2(cols);
-
+               
         lineEdgeBR2(rows);
         lineEdgeBR2(cols);
 
@@ -77,24 +77,21 @@ export default function solve(rs: Item[][], cs: Item[][]) {
         
         completeItem(rows);
         completeItem(cols);
-        if (count === 2)
-            break;
 
         lineBlocks(rows);
         lineBlocks(cols);
-       
+        //if (count === 3)
+        //    break;
         count++;
 
-        if (count === loopCount)
-            break;
+        //if (count === loopCount)
+        //    break;
 
         if (ptsCount === rows.reduce((acc, m) => acc + m.points.size, 0)
             && dtsCount === rows.reduce((acc, m) => acc + m.dots.size, 0))
             break;
 
     }
-
-    console.log(cols, rows);
 
     const points = rows.reduce((acc, row, index) => {
         const dts = Array.from(row.points.entries()).map(m => {
