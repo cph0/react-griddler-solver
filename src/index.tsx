@@ -12,7 +12,6 @@ export default function Griddler({
     griddler,
     squareSize = 20
 }: GriddlerProps) {
-
     const width = griddler.width;
     const height = griddler.height;
     const rowDepth = griddler.rowDepth;
@@ -42,24 +41,35 @@ export default function Griddler({
 
     const { points, dots } = solve(rows, cols);
 
+    console.log(cols, rows);
+
     return (
-        <>
+        <div className="m-2 d-inline-block"
+            style={{ width: ((rowDepth + width) * squareSize) + "px" }}>
             <div style={{
-                position: "relative", display: "inline-block",
-                width: (rowDepth * squareSize) + "px", height: (colDepth * squareSize) + "px"
+                position: "relative", height: (colDepth * squareSize) + "px"
             }}>
                 <TopLabels width={width} rowDepth={rowDepth} colDepth={colDepth}
                     squareSize={squareSize}
                     lines={cols} />
-                <LeftLabels width={width} rowDepth={rowDepth} colDepth={colDepth}
-                    squareSize={squareSize}
-                    lines={rows} />
             </div>
-            <div style={{ position: "relative", display: "inline-block" }}>
-                <Grid width={width} height={height} squareSize={squareSize} />
-                <Points points={points} squareSize={squareSize} />
-                <Dots points={dots} squareSize={squareSize} />
+            <div style={{ height: (height * squareSize) + "px" }}>
+                <div style={{
+                    position: "relative", display: "inline-block",
+                    width: (rowDepth * squareSize) + "px"
+                }}>
+                    <LeftLabels width={width} rowDepth={rowDepth} colDepth={colDepth}
+                        squareSize={squareSize}
+                        lines={rows} />
+                </div>
+                <div style={{
+                    position: "relative", display: "inline-block"
+                }}>
+                    <Grid width={width} height={height} squareSize={squareSize} />
+                    <Points points={points} squareSize={squareSize} />
+                    <Dots points={dots} squareSize={squareSize} />
+                </div>
             </div>
-        </>
+        </div>
     );
 }

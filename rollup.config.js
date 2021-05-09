@@ -1,7 +1,6 @@
 import babel from '@rollup/plugin-babel';
-import nodeResolve from 'rollup-plugin-node-resolve';
+import nodeResolve from '@rollup/plugin-node-resolve';
 import postcss from 'rollup-plugin-postcss';
-import external from 'rollup-plugin-peer-deps-external';
 import commonjs from '@rollup/plugin-commonjs';
 import del from 'rollup-plugin-delete';
 import typescript from 'rollup-plugin-typescript2';
@@ -13,7 +12,6 @@ export default {
         { file: pkg.main }
     ],
     plugins: [
-        external(),
         typescript({
             useTsconfigDeclarationDir: true,
             tsconfigOverride: {

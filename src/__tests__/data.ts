@@ -1,77 +1,62 @@
 import 'regenerator-runtime/runtime';
-import { Line } from '../classes';
-import { griddlers } from '../data';
+import { GriddlerFile, griddlers } from '../data';
 import solve from '../helpers/solver';
-import { Item } from '../interfaces';
 
-function solveGriddler(griddler: any, rows: Line[], cols: Line[]) {
-    const width = griddler.width;
-    const height = griddler.height;
-    
-    griddler.rows.forEach((f: number[], i: number) => {
-        const items: Item[] = f.map((value, index) => ({ index, value, colour: "black" }));
-        const line = new Line(width, i, items);
-        rows.push(line);
-    })
-
-    griddler.cols.forEach((f: number[], i: number) => {
-        const items: Item[] = f.map((value, index) => ({ index, value, colour: "black" }));
-        const line = new Line(height, i, items);
-        cols.push(line);
-    })
-
-    rows.forEach(f => {
-        f.setPairLines(cols);
+function solveGriddler(griddler: GriddlerFile) {
+    const rows = griddler.rows.map(f => {
+        return f.map((value, index) => {
+            const parts = value.toString().split('.');
+            return {
+                index,
+                value: parseInt(parts[0]),
+                colour: parts[1] === '1' ? 'green' : 'black'
+            };
+        });
     });
 
-    cols.forEach(f => {
-        f.setPairLines(rows);
+    const cols = griddler.cols.map(f => {
+        return f.map((value, index) => {
+            const parts = value.toString().split('.');
+            return {
+                index,
+                value: parseInt(parts[0]),
+                colour: parts[1] === '1' ? 'green' : 'black'
+            };
+        });
     });
 
-    solve(rows, cols);
+    return solve(rows, cols);
+}
+
+function testGriddler(griddler: GriddlerFile) {
+    const points: Map<string, string> = new Map(griddler.points.map(m => [`${m.yPos}_${m.xPos}`, m.colour]));
+    const dots: Set<string> = new Set();
+
+    const { points: pts, dots: dts } = solveGriddler(griddler);
+
+    for (let x = 0; x < griddler.width; x++) {
+        for (let y = 0; y < griddler.height; y++) {
+            if (!points.has(`${y}_${x}`))
+                dots.add(`${y}_${x}`);
+        }
+    }
+
+    const pointsOut = pts.map(m => [`${m.y}_${m.x}`, m.colour] as [string, string]);
+    const dotsOut = dts.map(m => `${m.y}_${m.x}`);
+    const pointsCorrect = pointsOut.length === points.size
+        && !pointsOut.some(o => !points.has(o[0]) || points.get(o[0]) !== o[1]);
+    const dotsCorrect = dotsOut.length === dots.size
+        && !dotsOut.some(o => !dots.has(o));
+
+    return [pointsCorrect, dotsCorrect];
 }
 
 describe("data", () => {
-
-    it("Bird10x10", () => {
-        const griddler = griddlers[1];
-        const points: Set<string> = new Set(griddler.points.map(m => `${m.yPos}_${m.xPos}`));
-        const dots: Set<string> = new Set();
-        const rows: Line[] = [];
-        const cols: Line[] = [];
-
-        solveGriddler(griddler, rows, cols);
-
-        for (let x = 0; x < griddler.width; x++) {
-            for (let y = 0; y < griddler.height; y++) {
-                if (!points.has(`${y}_${x}`))
-                    dots.add(`${y}_${x}`);
-            }
-        }
-
-        const pointsOut = rows.flatMap((f, i) => Array.from(f.points.keys()).map(m => `${i}_${m}`));
-        const dotsOut = rows.flatMap((f, i) => Array.from(f.dots.keys()).map(m => `${i}_${m}`));
-        const pointsCorrect = pointsOut.length === points.size
-            && !pointsOut.some(o => !points.has(o));
-        const dotsCorrect = dotsOut.length === dots.size
-            && !dotsOut.some(o => !dots.has(o));
-
+    test.each(griddlers)('multi', (griddler) => {
+        const [pointsCorrect, dotsCorrect] = testGriddler(griddler);
+        const ResultString = pointsCorrect && dotsCorrect ? '\u001b[42m PASS' : '\u001b[41m FAIL';
+        console.log('\u001b[30m ' + ResultString, '\u001b[37m \u001b[40m' + griddler.name);
         expect(pointsCorrect).toBe(true);
         expect(dotsCorrect).toBe(true);
     });
-
-    //test.each(griddlers)('', (griddler) => {
-
-    //    const rows: Line[] = [];
-    //    const cols: Line[] = [];
-
-    //    solveGriddler(griddler, rows, cols);
-
-    //    //const correctPoints = new Set([0, 1, 2, 3, 4, 5, 6, 7]);
-    //    //const pointsCorrect = col.points.size === correctPoints.size
-    //    //    && !Array.from(col.points.keys()).some(s => !correctPoints.has(s));
-
-    //    //expect(pointsCorrect).toBe(true);
-    //    //expect(col.dots.size).toBe(0);
-    //});
 });
