@@ -36,7 +36,8 @@ function App() {
             </div>
             <div className="row">
                 <div className="col" style={{ overflowY: "auto", height: "calc(78vh)" }}>                    
-                    {griddlers.map(griddler => <Griddler griddler={griddler} />)}
+                    {/*griddlers.map(griddler => <Griddler griddler={griddler} />)*/}
+                    <Griddler griddler={griddler} />
                 </div>
             </div>
         </>
