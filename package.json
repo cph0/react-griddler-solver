@@ -10,7 +10,7 @@
   ],
   "dependencies": {
     "@types/react": "^17.0.3",
-    "ts-index-map": "^1.0.0",
+    "ts-index-map": "^1.0.1",
     "zustand": "^3.4.1"
   },
   "peerDependencies": {

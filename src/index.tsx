@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import solve from './helpers/solver';
 import { GriddlerFile } from './data/index';
 import { Dots, Grid, LeftLabels, Points, TopLabels } from './renderers';
+import { Point } from './interfaces';
 
 interface GriddlerProps {
     griddler: GriddlerFile;
@@ -39,9 +40,11 @@ export default function Griddler({
         });
     });
 
-    const { points, dots } = solve(rows, cols);
-
-    console.log(cols, rows);
+    const [{ points, dots }, setData] = useState<{ points: Point[]; dots: Point[] }>({ points: [], dots: [] });
+    useEffect(() => {
+        const data = solve(rows, cols);
+        setData(data);
+    }, []);
 
     return (
         <div className="m-2 d-inline-block"

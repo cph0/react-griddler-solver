@@ -1,131 +1,8 @@
 import 'regenerator-runtime/runtime';
-//import IndexMap from 'ts-index-map';
+import IndexMap from 'ts-index-map';
 import { Item } from "../interfaces";
 import Block from './Block';
 import { LineSegment } from './LineSegment';
-
-class IndexMap<T, K extends keyof T> {
-    private _data: Map<number, T>;
-    private _indexes: Map<K, Map<T[K], Set<number>>> = new Map();
-    private _spareDataIds: number[] = [];
-
-    get size() {
-        return this._data.size;
-    }
-
-    get indexes() {
-        return this._indexes.size;
-    }
-
-    constructor(data?: T[], indexes?: K[]) {
-        const dataMap = (data || []).map((m, i) => [i, m] as [number, T]);
-        this._data = new Map(dataMap);
-
-        if (indexes)
-            this._indexes = new Map(indexes.map(m => [m, new Map()]));
-
-        if (data && indexes) {
-            for (const index of indexes)
-                this.setIndex(dataMap, index);
-        }
-    }
-
-    private setIndex(data: [number, T][], field: K) {
-        const map = new Map<T[K], Set<number>>();
-        const uniqueData = new Set(data.map(m => m[1][field]));
-
-        for (const unique of uniqueData) {
-            const dataAtKey = data.filter(f => f[1][field] === unique).map(f => f[0]);
-            map.set(unique, new Set(dataAtKey));
-        }
-        this._indexes.set(field, new Map(map));
-    }
-
-    addIndex(field: K) {
-        if (!this._indexes.has(field)) {
-            const data = Array.from(this._data.entries());
-            this.setIndex(data, field);
-        }
-    }
-
-    removeIndex(field: K) {
-        if (this._indexes.has(field))
-            this._indexes.delete(field);
-    }
-
-    get(field: K, key: T[K]) {
-        const map = this._indexes.get(field);
-
-        if (map) {
-            const dataIndexes = map.get(key);
-
-            if (dataIndexes) {
-                const matches: T[] = [];
-
-                for (const dataIndex of dataIndexes) {
-                    const match = this._data.get(dataIndex);
-                    if (match)
-                        matches.push(match);
-                }
-
-                return matches;
-            }
-        }
-
-        return Array.from(this._data.values()).filter(f => f[field] === key);
-    }
-
-    add(...values: T[]) {
-        for (const value of values) {
-            const spareDataIndex = this._spareDataIds.pop();
-            const dataIndex = spareDataIndex || this._data.size;
-            this._data.set(dataIndex, value);
-
-            for (const index of this._indexes) {
-                const set = index[1].get(value[index[0]]);
-
-                if (set)
-                    set.add(dataIndex);
-                else
-                    index[1].set(value[index[0]], new Set([dataIndex]));
-            }
-        }
-    }
-
-    delete(field: K, key: T[K]) {
-        const map = this._indexes.get(field);
-
-        if (map) {
-            const dataIndexes = map.get(key);
-
-            if (dataIndexes) {
-
-                for (const dataIndex of dataIndexes) {
-                    const data = this._data.get(dataIndex);
-
-                    if (data) {
-                        for (const index of this._indexes) {
-                            const dataAtIndex = data[index[0]];
-                            const matches = index[1].get(dataAtIndex);
-
-                            if (matches && matches.has(dataIndex))
-                                matches.delete(dataIndex);
-
-                            if (matches && matches.size === 0)
-                                index[1].delete(dataAtIndex);
-
-                            if (index[1].size === 0)
-                                this._indexes.delete(index[0]);
-                        }
-
-                        this._data.delete(dataIndex);
-                        this._spareDataIds.push(dataIndex);
-                    }
-                }
-            }
-        }
-    }
-}
 
 export default class Line {
     private readonly _lineIndex: number;
@@ -135,13 +12,10 @@ export default class Line {
     private _itemsOneValue: boolean | undefined;
     private _itemsUnique: boolean | undefined;
     private _pairLines: Map<number, Line> = new Map();
-    //private readonly _gapsBySize: Map<number, Set<number>>;
-    //private readonly _gapsByStart: Map<number, Block>;
     private readonly _gaps: IndexMap<Block, 'size' | 'start'>;
 
     public readonly items: Item[];
     public readonly lineLength: number;
-    //public readonly points: Map<number, string>;
     public readonly dots: Set<number>;
     public complete: boolean;
 
@@ -240,13 +114,9 @@ export default class Line {
         this._lineIndex = index;
         this.lineLength = lineLength;
         this.items = items;
-        //this.points = new Map();
         this.dots = new Set();
         this.complete = false;
-
         this._gaps = new IndexMap([new Block(0, lineLength - 1)], ['size', 'start']);
-        //this._gapsBySize = new Map([[lineLength, new Set([0])]]);
-        //this._gapsByStart = new Map([[0, new Block(0, lineLength - 1)]]);
     }
 
     isItemHere(pos: number, linePos: number, itemIndex: number) {
@@ -266,7 +136,6 @@ export default class Line {
         let equality = true;
 
         for (let i = 0; i < this.lineLength; i++) {
-            //const gap = this._gapsByStart.get(i);
             const gap = this._gaps.get('start', i)[0];
 
             if (gap) {
@@ -308,7 +177,6 @@ export default class Line {
 
     *getGapsB(pos: number) {
         for (let i = this.lineLength - 1; i >= pos; i--) {
-            //const gap = this._gapsByStart.get(i);
             const gap = this._gaps.get('start', i)[0];
             if (gap)
                 yield gap;
@@ -360,23 +228,16 @@ export default class Line {
     }
 
     *getGapsBySize(size: number) {
-        //const gaps = this._gapsBySize.get(size) || new Set();
         const gaps = this._gaps.get('size', size);
 
-        for (const gap of gaps) {
-            yield gap;
-            //const gapD = this._gapsByStart.get(gap)
-
-            //if (gapD)
-            //    yield gapD;
-        }
+        for (const gap of gaps)
+            yield gap;        
     }
 
     private findGapAtPos(index: number) {
         let gap;
 
         for (let i = index; i <= this.lineLength - 1; i++) {
-            //gap = this._gapsByStart.get(i);
             gap = this._gaps.get('start', i)[0];
 
             if (gap)
@@ -390,7 +251,6 @@ export default class Line {
         let gap;
 
         for (let i = index; i >= 0; i--) {
-            //gap = this._gapsByStart.get(i);
             gap = this._gaps.get('start', i)[0];
 
             if (gap)
@@ -404,32 +264,6 @@ export default class Line {
         const gapAtPos = this.findGapAtPosB(index);
         if (gapAtPos) {
             const { start, end } = gapAtPos;
-            //const leftGapSize = index - gapAtPos.start;
-            //const rightGapSize = gapAtPos.end - index;
-            //const gapsByOldSize = this._gapsBySize.get(size);
-            //const gapsByLeftSize = this._gapsBySize.get(leftGapSize);
-            //const gapsByRightSize = this._gapsBySize.get(rightGapSize);
-
-            //if (gapsByOldSize) {
-            //    gapsByOldSize.delete(start);
-
-            //    if (gapsByOldSize.size === 0)
-            //        this._gapsBySize.delete(size);
-            //}
-
-            //if (leftGapSize > 0) {
-            //    if (gapsByLeftSize)
-            //        gapsByLeftSize.add(start);
-            //    else
-            //        this._gapsBySize.set(leftGapSize, new Set([start]));
-            //}
-
-            //if (rightGapSize > 0) {
-            //    if (gapsByRightSize)
-            //        gapsByRightSize.add(index + 1);
-            //    else
-            //        this._gapsBySize.set(rightGapSize, new Set([index + 1]));
-            //}
 
             if (index === start && index === end)
                 this._gaps.delete('start', start);
@@ -447,22 +281,8 @@ export default class Line {
                 this._gaps.delete('start', start);
                 const rightGap = gapAtPos.splitGap(index);
                 this._gaps.add(gapAtPos);
-                this._gaps.add(rightGap);
+                this._gaps.add(rightGap);                
             }
-
-            //if (index === start && index === end)
-            //    this._gapsByStart.delete(start);
-            //else if (index === start) {
-            //    this._gapsByStart.delete(start);
-            //    gapAtPos.setStart(index + 1);
-            //    this._gapsByStart.set(index + 1, gapAtPos);
-            //}
-            //else if (index === end)
-            //    gapAtPos.setEnd(index - 1);
-            //else {
-            //    const rightGap = gapAtPos.splitGap(index);
-            //    this._gapsByStart.set(index + 1, rightGap);
-            //}
         }
     }
 
