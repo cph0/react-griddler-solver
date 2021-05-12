@@ -1,6 +1,6 @@
 import { Item } from "../interfaces";
 
-export class LineSegment {
+export default class LineSegment {
     private readonly _forward: boolean;
 
     public readonly index: number;

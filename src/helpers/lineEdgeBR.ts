@@ -31,7 +31,7 @@ export function lineEdgeBR2(lines: Line[]) {
         }
 
         if (pointCount > value)
-            throw new Error(`lineEdgeBR too big ${pointCount} ${value}`);
+            console.error(`lineEdgeBR too big ${pointCount} ${value}`);
 
         line.addDots(extend + value + 1, end);
 

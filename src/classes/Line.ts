@@ -2,7 +2,8 @@ import 'regenerator-runtime/runtime';
 import IndexMap from 'ts-index-map';
 import { Item } from "../interfaces";
 import Block from './Block';
-import { LineSegment } from './LineSegment';
+import Gap from './Gap';
+import LineSegment from './LineSegment';
 
 export default class Line {
     private readonly _lineIndex: number;
@@ -12,7 +13,7 @@ export default class Line {
     private _itemsOneValue: boolean | undefined;
     private _itemsUnique: boolean | undefined;
     private _pairLines: Map<number, Line> = new Map();
-    private readonly _gaps: IndexMap<Block, 'size' | 'start'>;
+    private readonly _gaps: IndexMap<Gap>;
 
     public readonly items: Item[];
     public readonly lineLength: number;
@@ -116,7 +117,7 @@ export default class Line {
         this.items = items;
         this.dots = new Set();
         this.complete = false;
-        this._gaps = new IndexMap([new Block(0, lineLength - 1)], ['size', 'start']);
+        this._gaps = new IndexMap(['size', 'start'], [new Gap(0, lineLength - 1)]);
     }
 
     isItemHere(pos: number, linePos: number, itemIndex: number) {
@@ -141,7 +142,7 @@ export default class Line {
             if (gap) {
 
                 const theItem = item < this.lineItems ? this.items[item] : null;
-                yield [gap, new LineSegment(theItem, equality, true)] as [Block, LineSegment];
+                yield [gap, new LineSegment(theItem, equality, true)] as [Gap, LineSegment];
 
                 if (includeItems) {
 
@@ -184,11 +185,12 @@ export default class Line {
     }
 
     *getBlocks() {
-        for (let i = 0; i < this.lineLength; i++) {
-            const gaps = this._gaps.get('start', i);
-            for (const gap of gaps) {
+        const skip = { i: 0 };
+        for (skip.i = 0; skip.i < this.lineLength; skip.i++) {
+            const gap = this._gaps.get('start', skip.i)[0];
+            if (gap) {
                 for (const block of gap.getBlocks())
-                    yield [block, gap];
+                    yield [block, gap, skip] as [Block, Gap, { i: number }];
             }
         }
     }
