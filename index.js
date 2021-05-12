@@ -5,7 +5,7 @@ import { griddlers } from './src/data/index';
 
 function App() {
 
-    const [sG, setSg] = useState(1);
+    const [sG, setSg] = useState(32);
     const griddler = griddlers[sG];
 
     const onSelectGriddler = (event) => {

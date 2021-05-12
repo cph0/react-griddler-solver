@@ -35,6 +35,8 @@ export default function lineGaps(lines: Line[]) {
                 //    line.addDots(gap.start, gap.end);
                 else if (equalityE && gap.hasPoints && itemE && gap.size === itemE.value)
                     line.addPoints(gap.start, gap.end, itemE.colour, itemE.index);
+                else if (itemE && gap.hasLastPoint && (equalityE || line.itemsOneValue))
+                    line.addPoints(gap.end - itemE.value + 1, gap.end - 1, itemE.colour, itemE.index);
                 else if (item && itemE && sum === gap.size)
                     fullPart(line, gap.start, item.index, itemE.index);
                 else if (item && itemE && (index === indexE || equality || equalityE)

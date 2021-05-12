@@ -44,7 +44,7 @@ export default function Griddler({
     useEffect(() => {
         const data = solve(rows, cols);
         setData(data);
-    }, []);
+    }, [griddler]);
 
     return (
         <div className="m-2 d-inline-block"
@@ -61,7 +61,7 @@ export default function Griddler({
                     position: "relative", display: "inline-block",
                     width: (rowDepth * squareSize) + "px"
                 }}>
-                    <LeftLabels width={width} rowDepth={rowDepth} colDepth={colDepth}
+                    <LeftLabels width={height} rowDepth={rowDepth} colDepth={colDepth}
                         squareSize={squareSize}
                         lines={rows} />
                 </div>
