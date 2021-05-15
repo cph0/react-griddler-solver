@@ -98,7 +98,7 @@ export default function solve(rs: Item[][], cs: Item[][]) {
             break;
     }
 
-    console.log(rows, cols);
+    //console.log(rows, cols);
 
     const points = rows.reduce((acc, row, index) => {
         const dts = Array.from(row.points.entries()).map(m => {
