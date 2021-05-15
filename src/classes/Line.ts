@@ -132,17 +132,22 @@ export default class Line {
         return this.items.filter(f => f.index >= start && f.index <= end);
     }
 
+    private ranOutOfItems(item: number, forward = true) {
+        return forward ? item >= this.lineItems : item < 0;
+    }
+
     *getGaps(includeItems = false) {
         let item = 0;
         let equality = true;
 
-        for (let i = 0; i < this.lineLength; i++) {
-            const gap = this._gaps.get('start', i)[0];
+        const skip = { i: 0 };
+        for (skip.i = 0; skip.i < this.lineLength; skip.i++) {
+            const gap = this._gaps.get('start', skip.i)[0];
 
             if (gap) {
 
                 const theItem = item < this.lineItems ? this.items[item] : null;
-                yield [gap, new LineSegment(theItem, equality, true)] as [Gap, LineSegment];
+                yield [gap, new LineSegment(theItem, equality, true), skip] as [Gap, LineSegment, { i: number }];
 
                 if (includeItems) {
 
@@ -164,10 +169,18 @@ export default class Line {
                     if (!gap.isFull && (itemShift > 1 || (itemShift === 1 && !gap.points.size)))
                         equality = false;
 
-                    if (item >= this.lineItems && gap.isFull && this.itemsUnique) {
+                    const uniqueItems = this.items.filter(f => f.value === gap.size);
+                    if (gap.isFull && uniqueItems.length === 1) {
+                        item = uniqueItems[0].index;
+                        equality = true;
+                        itemShift = 1;
+                    }
+
+                    if (this.ranOutOfItems(item) && gap.isFull && this.itemsUnique) {
                         const temp = this.items.find(f => f.value === gap.size);
-                        item = temp ? temp.index + 1 : -1;
+                        item = temp ? temp.index : -1;
                         equality = !!temp;
+                        itemShift = 1;
                     }
 
                     item += itemShift;
@@ -184,13 +197,13 @@ export default class Line {
         }
     }
 
-    *getBlocks() {
-        const skip = { i: 0 };
-        for (skip.i = 0; skip.i < this.lineLength; skip.i++) {
-            const gap = this._gaps.get('start', skip.i)[0];
-            if (gap) {
-                for (const block of gap.getBlocks())
-                    yield [block, gap, skip] as [Block, Gap, { i: number }];
+    *getBlocks(includeItems = false) {
+        for (const gap of this.getGaps(includeItems)) {
+            const i = gap[2].i;
+            for (const block of gap[0].getBlocks()) {
+                yield [block, ...gap] as [Block, Gap, LineSegment, { i: number }];            
+                if (gap[2].i !== i)
+                    break;
             }
         }
     }
@@ -218,6 +231,8 @@ export default class Line {
 
             if (!gap.isFull && (itemShift > 1 || (itemShift === 1 && !gap.points.size)))
                 equality = false;
+
+
 
             item -= itemShift;
         }
