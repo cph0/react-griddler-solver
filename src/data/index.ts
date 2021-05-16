@@ -64,21 +64,21 @@ import Goose18x15 from './Goose18x15.json';
 import PolarBear19x14 from './PolarBear19x14.json';
 import Sushi19x13 from './Sushi19x13.json';
 import { Point } from '../interfaces';
-//import Agile20x30 from './Agile20x30.json';
-//import Balanced20x30 from './Balanced20x30.json';
-//import Beg20x20 from './Beg20x20.json';
-//import Bonfire20x15 from './Bonfire20x15.json';
-//import Boot20x15 from './Boot20x15.json';
-//import Budgie20x20 from './Budgie20x20.json';
-//import Bus20x20 from './Bus20x20.json';
-//import Butterfly20x20 from './Butterfly20x20.json';
-//import Cheburashka20x14 from './Cheburashka20x14.json';
-//import Chick20x20 from './Chick20x20.json';
-//import CountryLodge20x15 from './CountryLodge20x15.json';
-//import Crash20x20 from './Crash20x20.json';
-//import Dino20x20 from './Dino20x20.json';
-//import Diplodocus20x15 from './Diplodocus20x15.json';
-//import Doggie20x15 from './Doggie20x15.json';
+import Agile20x30 from './Agile20x30.json';
+import Balanced20x30 from './Balanced20x30.json';
+import Beg20x20 from './Beg20x20.json';
+import Bonfire20x15 from './Bonfire20x15.json';
+import Boot20x15 from './Boot20x15.json';
+import Budgie20x20 from './Budgie20x20.json';
+import Bus20x20 from './Bus20x20.json';
+import Butterfly20x20 from './Butterfly20x20.json';
+import Cheburashka20x14 from './Cheburashka20x14.json';
+import Chick20x20 from './Chick20x20.json';
+import CountryLodge20x15 from './CountryLodge20x15.json';
+import Crash20x20 from './Crash20x20.json';
+import Dino20x20 from './Dino20x20.json';
+import Diplodocus20x15 from './Diplodocus20x15.json';
+import Doggie20x15 from './Doggie20x15.json';
 //import Dragon20x20 from './Dragon20x20.json';
 //import Edible20x20 from './Edible20x20.json';
 //import FastFood20x20 from './FastFood20x20.json';
@@ -249,22 +249,22 @@ export const griddlers: GriddlerFile[] = [
     Teapot17x14,
     Goose18x15,
     PolarBear19x14,
-    Sushi19x13//,
-    //Agile20x30,
-    //Balanced20x30,
-    //Beg20x20,
-    //Bonfire20x15,
-    //Boot20x15,
-    //Budgie20x20,
-    //Bus20x20,
-    //Butterfly20x20,
-    //Cheburashka20x14,
-    //Chick20x20,
-    //CountryLodge20x15,
-    //Crash20x20,
-    //Dino20x20,
-    //Diplodocus20x15,
-    //Doggie20x15,
+    Sushi19x13,
+    Agile20x30,
+    Balanced20x30,
+    Beg20x20,
+    Bonfire20x15,
+    Boot20x15,
+    Budgie20x20,
+    Bus20x20,
+    Butterfly20x20,
+    Cheburashka20x14,
+    Chick20x20,
+    CountryLodge20x15,
+    Crash20x20,
+    Dino20x20,
+    Diplodocus20x15,
+    Doggie20x15//,
     //Dragon20x20,
     //Edible20x20,
     //FastFood20x20,

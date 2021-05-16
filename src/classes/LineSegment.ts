@@ -1,21 +1,24 @@
 import { Item } from "../interfaces";
 
 export default class LineSegment {
-    private readonly _forward: boolean;
-
     public readonly index: number;
+    public readonly equalityIndex: number;
     public readonly item: Item | null;
-    public readonly equality: boolean;
-
-    constructor(item: Item | null, equality: boolean, forward = false) {
-        this._forward = forward;
-
-        this.index = item ? item.index : forward ? 999 : -1;
-        this.item = item;
-        this.equality = equality;
+    
+    get equality() {
+        return this.index === this.equalityIndex;
     }
 
-    with(ls: LineSegment) {
-        return [Math.min(this.index, ls.index), Math.max(this.index, ls.index)];
+    constructor(item: Item | null, index: number, equalityIndex: number) {
+        this.index = index;
+        this.equalityIndex = equalityIndex;
+        this.item = item;
+    }
+
+    with(ls: LineSegment, gapOnly = true) {
+        if (gapOnly)
+            return [Math.min(this.index, ls.index), Math.max(this.index, ls.index)];
+        else
+            return [this.equalityIndex, ls.equalityIndex];
     }
 }

@@ -19,6 +19,10 @@ export default class Gap extends Block {
         return this._blocks.has('end', this.end);
     }
 
+    get numberOfBlocks() {
+        return this._blocks.size;
+    }
+
     get hasPoints() {
         return this._blocks.size > 0;
     }
@@ -37,6 +41,7 @@ export default class Gap extends Block {
         this.startItemsYes = new Set();
         this.startItemsNo = new Set();
         this.refreshStartItems();
+        this.refreshEndItems();
     }
 
     canStartWith(item: Item) {
@@ -50,6 +55,14 @@ export default class Gap extends Block {
             if(block)
                 yield block;
         }
+    }
+
+    getBlockAtStart(start: number) {
+        return this._blocks.get('start', start)[0];
+    }
+
+    getBlockAtEnd(end: number) {
+        return this._blocks.get('end', end)[0];
     }
 
     private refreshStartItems() {
@@ -71,6 +84,13 @@ export default class Gap extends Block {
         }
     }
 
+    private refreshEndItems() {
+        const lastBlock = this._blocks.get('end', this.end)[0];
+        while (lastBlock && lastBlock.start <= this._nextEmptyB) {
+            this._nextEmptyB--;
+        }
+    }
+
     setStart(start: number) {
         this.start = start;
         this._nextEmpty = start;
@@ -80,8 +100,7 @@ export default class Gap extends Block {
     setEnd(end: number) {
         this.end = end;
         this._nextEmptyB = end;
-        while (this.points.has(this._nextEmptyB))
-            this._nextEmptyB--;
+        this.refreshEndItems();
     }
 
     splitGap(index: number) {

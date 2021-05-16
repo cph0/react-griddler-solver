@@ -136,8 +136,27 @@ export default class Line {
         return forward ? item >= this.lineItems : item < 0;
     }
 
+    some<T>(itr: Generator<T, void, unknown>, func: (f: T) => boolean) {
+        for (const value of itr) {
+            if (func(value))
+                return true;
+        }
+        return false;
+    }
+
+    *pair() {
+        for (let i = 0; i < this.lineItems - 1; i++)
+            yield [this.items[i], this.items[i + 1]];
+    }
+
+    *triple() {
+        for (let i = 0; i < this.lineItems - 2; i++)
+            yield [this.items[i], this.items[i + 1], this.items[i + 2]];
+    }
+
     *getGaps(includeItems = false) {
         let item = 0;
+        let equalityItem = 0;
         let equality = true;
 
         const skip = { i: 0 };
@@ -147,7 +166,7 @@ export default class Line {
             if (gap) {
 
                 const theItem = item < this.lineItems ? this.items[item] : null;
-                yield [gap, new LineSegment(theItem, equality, true), skip] as [Gap, LineSegment, { i: number }];
+                yield [gap, new LineSegment(theItem, item, equalityItem), skip] as [Gap, LineSegment, { i: number }];
 
                 if (includeItems) {
 
@@ -183,6 +202,9 @@ export default class Line {
                         itemShift = 1;
                     }
 
+                    if (equality)
+                        equalityItem = item + itemShift;
+
                     item += itemShift;
                 }
             }
@@ -197,19 +219,23 @@ export default class Line {
         }
     }
 
+    *getGapsBySize(size: number) {
+        const gaps = this._gaps.get('size', size);
+
+        for (const gap of gaps)
+            yield gap;        
+    }
+
     *getBlocks(includeItems = false) {
         for (const gap of this.getGaps(includeItems)) {
-            const i = gap[2].i;
-            for (const block of gap[0].getBlocks()) {
+            for (const block of gap[0].getBlocks())
                 yield [block, ...gap] as [Block, Gap, LineSegment, { i: number }];            
-                if (gap[2].i !== i)
-                    break;
-            }
         }
     }
 
     getItemsAtPositionB(pos: number) {
         let item = this.lineItems - 1;
+        let equalityItem = this.lineItems - 1;
         let valid = true;
         let equality = true;
 
@@ -232,7 +258,8 @@ export default class Line {
             if (!gap.isFull && (itemShift > 1 || (itemShift === 1 && !gap.points.size)))
                 equality = false;
 
-
+            if (equality)
+                equalityItem = item - itemShift;
 
             item -= itemShift;
         }
@@ -241,14 +268,7 @@ export default class Line {
             valid = false;
 
         const theItem = valid ? this.items[item] : null;        
-        return new LineSegment(theItem, equality);
-    }
-
-    *getGapsBySize(size: number) {
-        const gaps = this._gaps.get('size', size);
-
-        for (const gap of gaps)
-            yield gap;        
+        return new LineSegment(theItem, item, equalityItem);
     }
 
     private findGapAtPos(index: number) {
