@@ -69,25 +69,21 @@ export default function solve(rs: Item[][], cs: Item[][]) {
         lineEdgeTL2(rows);
         lineEdgeTL2(cols);
 
-
         lineEdgeBR2(rows);
         lineEdgeBR2(cols);
 
         lineGaps(rows);
         lineGaps(cols);
 
-        
         completeItem(rows);
         completeItem(cols);
 
-
-        //if (count === 2)
-        //    break;
-
-
         lineBlocks(rows);
         lineBlocks(cols);
-       
+
+        //if (count === 6)
+        //    break;
+
         count++;
 
         //if (count === loopCount)

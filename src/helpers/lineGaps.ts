@@ -1,5 +1,4 @@
-import Gap from "../classes/Gap";
-import { Line } from "../classes/index";
+import { Line, Gap } from "../classes/index";
 import { Item } from "../interfaces";
 import forEachLine from "./forEachLine";
 import { fullPart } from "./fullLine";
@@ -44,6 +43,12 @@ export default function lineGaps(lines: Line[]) {
                 else if (itemFillsGap(gap, equalityE, itemE) && itemE)
                     line.addPoints(gap.start, gap.end, itemE.colour, itemE.index);
                 else if (itemAtEdgeOfGap(gap.hasLastPoint, equalityE, line, itemE) && itemE) {
+                    line.addPoints(gap.end - itemE.value + 1, gap.end - 1, itemE.colour, itemE.index);
+                    line.addDot(gap.end - itemE.value);
+                    skip.i = gap.end;
+                }
+                else if (gap.hasLastPoint && itemE
+                    && new Set(line.filterItems(itemE.index).map(m => m.value)).size === 1) {
                     line.addPoints(gap.end - itemE.value + 1, gap.end - 1, itemE.colour, itemE.index);
                     line.addDot(gap.end - itemE.value);
                     skip.i = gap.end;
