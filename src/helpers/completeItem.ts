@@ -7,7 +7,6 @@ export default function completeItem(lines: Line[]) {
         let blockCount = 0;
 
         for (const [block, gap, ls, skip] of line.getBlocks(true)) {
-
             //max item
             if (line.maxItem === block.size) {
                 line.addDot(block.start - 1);
