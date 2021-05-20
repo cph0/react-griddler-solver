@@ -80,14 +80,24 @@ export default function solve(rs: Item[][], cs: Item[][]) {
 
         lineBlocks(rows);
         lineBlocks(cols);
-
-        //if (count === 6)
+        //if (count === 3)
         //    break;
+
 
         count++;
 
         //if (count === loopCount)
         //    break;
+
+        const strayDogs = rows.flatMap((r, i) => Array.from(r.dots)
+            .filter(s => r.points.has(s)).map(m => ({ x: m, y: i })));
+        if (strayDogs.length > 0) {
+
+            for (const strayDog of strayDogs)
+                console.error(`Stray Dog x:${strayDog.x} y: ${strayDog.y}`);
+
+            break;
+        }
 
         if (ptsCount === rows.reduce((acc, m) => acc + m.points.size, 0)
             && dtsCount === rows.reduce((acc, m) => acc + m.dots.size, 0))

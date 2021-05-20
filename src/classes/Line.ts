@@ -363,6 +363,23 @@ export default class Line {
         }
     }
 
+    min(start: number, end: number, min = 1) {
+        return this.items.reduce((acc, item, index) => {
+            if (index >= start && index <= end
+                && item.value >= min && (!acc || item.value < acc))
+                return item.value;
+            return acc;
+        }, undefined as number | undefined) as number;
+    }
+
+    max(start: number, end: number) {
+        return this.items.reduce((acc, item, index) => {
+            if (index >= start && index <= end && item.value > acc)
+                return item.value;
+            return acc;
+        }, 0);
+    }
+
     sum(includeDots = true, start = 0, end = this.lineItems - 1) {
         return this.items.reduce((acc, item, index) => {
             if (index >= start && index <= end)
