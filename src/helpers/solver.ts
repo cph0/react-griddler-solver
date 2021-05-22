@@ -80,9 +80,9 @@ export default function solve(rs: Item[][], cs: Item[][]) {
 
         lineBlocks(rows);
         lineBlocks(cols);
-        //if (count === 3)
-        //    break;
 
+        //if (count === 1)
+        //    break;
 
         count++;
 
@@ -95,6 +95,8 @@ export default function solve(rs: Item[][], cs: Item[][]) {
 
             for (const strayDog of strayDogs)
                 console.error(`Stray Dog x:${strayDog.x} y: ${strayDog.y}`);
+
+            console.error(`Loop Count ${count - 1}`);
 
             break;
         }

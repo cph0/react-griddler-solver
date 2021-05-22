@@ -4,7 +4,11 @@ export default class LineSegment {
     public readonly index: number;
     public readonly equalityIndex: number;
     public readonly item: Item | null;
-    
+
+    get valid() {
+        return !!this.item;
+    }
+
     get equality() {
         return this.index === this.equalityIndex;
     }

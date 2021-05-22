@@ -159,14 +159,15 @@ export default class Line {
         let equalityItem = 0;
         let equality = true;
 
-        const skip = { i: 0 };
+        const skip = { i: 0, b: false };
         for (skip.i = 0; skip.i < this.lineLength; skip.i++) {
             const gap = this._gaps.get('start', skip.i)[0];
 
             if (gap) {
 
                 const theItem = item < this.lineItems ? this.items[item] : null;
-                yield [gap, new LineSegment(theItem, item, equalityItem), skip] as [Gap, LineSegment, { i: number }];
+                const ls = new LineSegment(theItem, item, equalityItem);
+                yield [gap, ls, skip] as [Gap, LineSegment, { i: number; b: boolean }];
 
                 if (includeItems) {
 
@@ -228,8 +229,13 @@ export default class Line {
 
     *getBlocks(includeItems = false) {
         for (const gap of this.getGaps(includeItems)) {
-            for (const block of gap[0].getBlocks())
-                yield [block, ...gap] as [Block, Gap, LineSegment, { i: number }];            
+            gap[2].b = false;
+            for (const block of gap[0].getBlocks()) {
+                yield [block, ...gap] as [Block, Gap, LineSegment, { i: number; b: boolean }];
+
+                if (gap[2].b)
+                    break;
+            }
         }
     }
 
