@@ -22,7 +22,6 @@ export default function lineBlocks(lines: Line[]) {
                 const nextBlock = gap.getBlockAtStart(block.end + 2);
                 if (nextBlock && line.items.every(e => e.value < nextBlock.end - block.start + 1)) {
                     line.addDot(block.end + 1);
-                    skip.i = block.end + 2;
                     blockCount++;
                     continue;
                 }
@@ -42,15 +41,18 @@ export default function lineBlocks(lines: Line[]) {
             const minItemBackwards = () => {
                 let minItem = line.minItem;
 
-                if (indexE > 0 || equalityIndexE < line.lineItems - 1)
-                    minItem = line.min(indexE, equalityIndexE, block.size);
+                if (indexE > 0 || equalityIndexE < line.lineItems - 1) {
+                    const anyFitsBefore = line.filterItems(indexE, equalityIndexE)
+                        .some(s => gap.end - s.value > block.end);
+                    if(!anyFitsBefore)
+                        minItem = line.min(indexE, equalityIndexE, block.size);
+                }
 
                 return minItem;
             }
             const mB = minItemBackwards();
-            if (gap.end - mB + 1 < block.start) {
+            if (gap.end - mB + 1 < block.start)
                 line.addPoints(gap.end - mB + 1, block.start - 1, "black");
-            }
 
             //min item forwards
             const minItemForwards = () => {
@@ -61,15 +63,18 @@ export default function lineBlocks(lines: Line[]) {
 
                 if (distinctItems.size === 1)
                     minItem = line.items.map(m => m.value).find(f => f >= block.size) as number;
-                else if (equalityIndex > 0 || index < line.lineItems - 1)
-                    minItem = line.min(equalityIndex, index, block.size);
+                else if (equalityIndex > 0 || index < line.lineItems - 1) {
+                    const anyFitsBefore = line.filterItems(equalityIndex, index)
+                        .some(s => gap.start + s.value < block.start);
+                    if(!anyFitsBefore)
+                        minItem = line.min(equalityIndex, index, block.size);
+                }
 
                 return minItem;
             }
             const m = minItemForwards();
-            if (gap.start + m - 1 > block.end) {
+            if (gap.start + m - 1 > block.end)
                 line.addPoints(block.end + 1, gap.start + m - 1, "black");
-            }
 
             //single item start
             if (equality && item && gap.start + item.value >= block.start
@@ -99,10 +104,8 @@ export default function lineBlocks(lines: Line[]) {
                 return singleItem;
             }
             const sie = singleItemEnd();
-            if (sie && block.start + sie <= gap.end) {
+            if (sie && block.start + sie <= gap.end)
                 line.addDots(block.start + sie, gap.end);
-                skip.i = block.end;
-            }
 
             blockCount++;
         }

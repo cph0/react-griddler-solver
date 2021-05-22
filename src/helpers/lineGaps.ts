@@ -27,7 +27,6 @@ export default function lineGaps(lines: Line[]) {
             else if (itemAtEdgeOfGap(gap.hasFirstPoint, equality, line, item) && item) {
                 line.addPoints(gap.start + 1, gap.start + item.value - 1, item.colour, item.index);
                 line.addDot(gap.start + item.value);
-                skip.i = gap.start + item.value;
             }
             else {
                 const lsEnd = line.getItemsAtPositionB(gap.end + 1);
@@ -43,20 +42,20 @@ export default function lineGaps(lines: Line[]) {
                 else if (itemFillsGap(gap, equalityE, itemE) && itemE)
                     line.addPoints(gap.start, gap.end, itemE.colour, itemE.index);
                 else if (itemAtEdgeOfGap(gap.hasLastPoint, equalityE, line, itemE) && itemE) {
+                    if(gap.end - itemE.value === gap.start)
+                        skip.i = gap.end;
                     line.addPoints(gap.end - itemE.value + 1, gap.end - 1, itemE.colour, itemE.index);
                     line.addDot(gap.end - itemE.value);
-                    skip.i = gap.end;
                 }
                 else if (gap.hasLastPoint && itemE
                     && new Set(line.filterItems(itemE.index).map(m => m.value)).size === 1) {
+                    if (gap.end - itemE.value === gap.start)
+                        skip.i = gap.end;
                     line.addPoints(gap.end - itemE.value + 1, gap.end - 1, itemE.colour, itemE.index);
                     line.addDot(gap.end - itemE.value);
-                    skip.i = gap.end;
                 }
-                else if (item && itemE && sum === gap.size) {
+                else if (item && itemE && sum === gap.size)
                     fullPart(line, gap.start, item.index, itemE.index);
-                    skip.i = gap.end;
-                }
                 else if (item && itemE && (index === indexE || equality || equalityE)
                         && sum < gap.size && sum > gap.size / 2)
                     overlapPart(line, gap.start, gap.end, item.index, itemE.index);
