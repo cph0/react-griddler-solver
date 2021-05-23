@@ -77,14 +77,28 @@ export default function lineBlocks(lines: Line[]) {
                 line.addPoints(block.end + 1, gap.start + m - 1, "black");
 
             //single item start
-            if (equality && item && gap.start + item.value >= block.start
-                && block.end - item.value >= gap.start) {
-                line.addDots(gap.start, block.end - item.value);
-                skip.i = block.end;
+            const singleItemStart = () => {
+                let singleItem;
+
+                if (lineIsolated && (gap.numberOfBlocks === 1 || blockCount === 0)
+                    && block.end - line.items[blockCount].value >= gap.start) {
+                    singleItem = line.items[blockCount].value;
+                }
+                else if (equality && item && gap.start + item.value >= block.start
+                    && block.end - item.value >= gap.start) {
+                    singleItem = item.value;
+                }
+                else if (line.items.filter(f => f.value >= block.size).length === 1) {
+                    const itm = line.items.find(f => f.value >= block.size);
+                    if (itm && itm.index === 0)
+                        singleItem = line.items.map(m => m.value).find(f => f >= block.size);
+                }
+
+                return singleItem;
             }
-            else if (lineIsolated && (gap.numberOfBlocks === 1 || blockCount === 0)
-                && block.end - line.items[blockCount].value >= gap.start) {
-                line.addDots(gap.start, block.end - line.items[blockCount].value);
+            const sis = singleItemStart();
+            if (sis && block.end - sis >= gap.start) {
+                line.addDots(gap.start, block.end - sis);
                 skip.i = block.end;
             }
 
@@ -100,12 +114,36 @@ export default function lineBlocks(lines: Line[]) {
                             && line.min(indexE, equalityIndexE) >= gap.end - block.end) {
                     singleItem = line.max(indexE, equalityIndexE);
                 }
+                else if (line.items.filter(f => f.value >= block.size).length === 1) {
+                    const itm = line.items.find(f => f.value >= block.size);
+                    if(itm && itm.index === line.lineItems - 1)
+                        singleItem = line.items.map(m => m.value).find(f => f >= block.size);
+                }
 
                 return singleItem;
             }
             const sie = singleItemEnd();
             if (sie && block.start + sie <= gap.end)
                 line.addDots(block.start + sie, gap.end);
+
+            //isolated items reach
+            if (lineIsolated && gap.numberOfBlocks > 1
+                && blockCount < line.lineItems - 1) {
+                const itm = line.items[blockCount];
+                const nextItem = line.items[blockCount + 1];
+                const start = block.start + itm.value;
+                let nextBlock;
+
+                for (let i = start; i <= gap.end; i++) {
+                    nextBlock = gap.getBlockAtStart(i);
+
+                    if (nextBlock)
+                        break;
+                }
+
+                if(nextBlock)
+                    line.addDots(start, nextBlock.end - nextItem.value);
+            }
 
             blockCount++;
         }

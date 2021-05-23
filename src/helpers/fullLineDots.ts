@@ -3,7 +3,7 @@ import forEachLine from "./forEachLine";
 
 export default function fullLineDots(lines: Line[]) {
     const run = (l: Line) => l.sum(false) === l.linePointsValue();
-    for (const line of forEachLine(lines, run)) {        
+    for (const line of forEachLine(lines, run, 0)) {        
         line.complete = true;
 
         for (let Pos = 0; Pos < line.lineLength; Pos++) {
