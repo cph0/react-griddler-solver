@@ -129,11 +129,46 @@ export default class Line {
     }
 
     filterItems(start: number, end: number = this.lineItems - 1) {
+        [start, end] = [Math.min(start, end), Math.max(start, end)];
         return this.items.filter(f => f.index >= start && f.index <= end);
     }
 
     private ranOutOfItems(item: number, forward = true) {
         return forward ? item >= this.lineItems : item < 0;
+    }
+
+    private adjustItemIndexes(gap: Gap, ei: number, iei: [number, boolean, number], forward = true) {
+        if (!gap.isFull && (iei[2] > 1 || (iei[2] === 1 && !gap.points.size)))
+            iei[1] = false;
+
+        if (gap.isFull && (!iei[1] || this.ranOutOfItems(iei[0], forward)
+            || gap.size !== this.items[iei[0]].value)) {
+            const items = this.filterItems(ei, iei[0]);
+            const uniqueItems = items.filter(f => f.value === gap.size);
+            let itm;
+
+            if (uniqueItems.length === 1)
+                itm = uniqueItems[0];
+            else
+                itm = this.find(this.loopItr(items, !forward), f => f.value === gap.size);
+
+            iei = [itm ? itm.index : -1, uniqueItems.length === 1, 1];
+        }
+
+        return iei;
+    }
+
+    *loopItr(itr: Item[], forward = true) {
+        for (let i = forward ? 0 : itr.length - 1; forward ? i < itr.length : i >= 0; forward ? i++ : i--) {
+            yield itr[i];
+        }
+    }
+
+    find<T>(itr: Generator<T, void, unknown>, func: (f: T) => boolean) {
+        for (const value of itr) {
+            if (func(value))
+                return value;
+        }
     }
 
     some<T>(itr: Generator<T, void, unknown>, func: (f: T) => boolean) {
@@ -155,11 +190,9 @@ export default class Line {
     }
 
     *getGaps(includeItems = false) {
-        let item = 0;
-        let equalityItem = 0;
-        let equality = true;
+        let [item, equalityItem, equality] = [0, 0, true];        
+        const skip = { i: 0 };
 
-        const skip = { i: 0, b: false };
         for (skip.i = 0; skip.i < this.lineLength; skip.i++) {
             const gap = this._gaps.get('start', skip.i)[0];
 
@@ -186,25 +219,13 @@ export default class Line {
                         sum += this.dotCount(i);
                     }
 
-                    if (!gap.isFull && (itemShift > 1 || (itemShift === 1 && !gap.points.size)))
-                        equality = false;
-
-                    const uniqueItems = this.items.filter(f => f.value === gap.size);
-                    if (gap.isFull && uniqueItems.length === 1) {
-                        item = uniqueItems[0].index;
-                        equality = true;
-                        itemShift = 1;
-                    }
-
-                    if (this.ranOutOfItems(item) && gap.isFull && this.itemsUnique) {
-                        const temp = this.items.find(f => f.value === gap.size);
-                        item = temp ? temp.index : -1;
-                        equality = !!temp;
-                        itemShift = 1;
-                    }
+                    [item, equality, itemShift]
+                        = this.adjustItemIndexes(gap, equalityItem, [item, equality, itemShift]);
 
                     if (equality)
                         equalityItem = item + itemShift;
+                    else if (gap.hasPoints)
+                        equalityItem++;
 
                     item += itemShift;
                 }
@@ -229,21 +250,14 @@ export default class Line {
 
     *getBlocks(includeItems = false) {
         for (const gap of this.getGaps(includeItems)) {
-            gap[2].b = false;
-            for (const block of gap[0].getBlocks()) {
-                yield [block, ...gap] as [Block, Gap, LineSegment, { i: number; b: boolean }];
-
-                if (gap[2].b)
-                    break;
-            }
+            for (const block of gap[0].getBlocks())
+                yield [block, ...gap] as [Block, Gap, LineSegment, { i: number }];
         }
     }
 
     getItemsAtPositionB(pos: number) {
-        let item = this.lineItems - 1;
-        let equalityItem = this.lineItems - 1;
-        let valid = true;
-        let equality = true;
+        let [item, equality] = [this.lineItems - 1, true];
+        let equalityItem = item;
 
         for (const gap of this.getGapsB(pos)) {
             let sum = 0;
@@ -261,19 +275,18 @@ export default class Line {
                 sum += this.dotCountB(i);
             }
 
-            if (!gap.isFull && (itemShift > 1 || (itemShift === 1 && !gap.points.size)))
-                equality = false;
+            [item, equality, itemShift]
+                = this.adjustItemIndexes(gap, equalityItem, [item, equality, itemShift], false);
 
             if (equality)
                 equalityItem = item - itemShift;
+            else if (gap.hasPoints)
+                equalityItem--;
 
             item -= itemShift;
         }
 
-        if (item < 0)
-            valid = false;
-
-        const theItem = valid ? this.items[item] : null;        
+        const theItem = item >= 0 ? this.items[item] : null;        
         return new LineSegment(theItem, item, equalityItem);
     }
 
