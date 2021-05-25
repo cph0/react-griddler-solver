@@ -4,6 +4,7 @@ export default class LineSegment {
     public readonly index: number;
     public readonly equalityIndex: number;
     public readonly item: Item | null;
+    public indexAtBlock: number;
 
     get valid() {
         return !!this.item;
@@ -17,6 +18,7 @@ export default class LineSegment {
         this.index = index;
         this.equalityIndex = equalityIndex;
         this.item = item;
+        this.indexAtBlock = index;
     }
 
     with(ls: LineSegment, gapOnly = true) {
