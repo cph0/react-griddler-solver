@@ -22,7 +22,7 @@ export function overlapPart(line: Line, position: number, lineEnd: number, start
             LineFlagsBackward.add(`${lineEnd - LinePosition}_${index}`);
             LinePosition++;
         }
-        LinePosition += line.dotCountB(index);
+        LinePosition += line.dotCount(index, false);
     }
     for (let itemIndex = startIndex; itemIndex <= endIndex; itemIndex++) {
         const { index, colour } = line.items[itemIndex];

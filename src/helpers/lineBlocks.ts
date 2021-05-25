@@ -13,7 +13,7 @@ export default function lineBlocks(lines: Line[]) {
                 continue;
             }
 
-            const { index, equalityIndex, equality, item } = ls;
+            const { index, equalityIndex } = ls;
             const lsEnd = line.getItemsAtPositionB(gap.end + 1);
             const { index: indexE, equalityIndex: equalityIndexE } = lsEnd;
 
@@ -84,9 +84,9 @@ export default function lineBlocks(lines: Line[]) {
                     && block.end - line.items[blockCount].value >= gap.start) {
                     singleItem = line.items[blockCount].value;
                 }
-                else if (equality && item && gap.start + item.value >= block.start
-                    && block.end - item.value >= gap.start) {
-                    singleItem = item.value;
+                else if ((equalityIndex > 0 || index < line.lineItems - 1)
+                    && line.min(equalityIndex, index) >= block.start - gap.start) {
+                    singleItem = line.max(equalityIndex, index);
                 }
                 else if (line.items.filter(f => f.value >= block.size).length === 1) {
                     const itm = line.items.find(f => f.value >= block.size);

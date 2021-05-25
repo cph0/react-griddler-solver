@@ -120,10 +120,6 @@ export default class Line {
         this._gaps = new IndexMap(['size', 'start'], [new Gap(0, lineLength - 1)]);
     }
 
-    isItemHere(pos: number, linePos: number, itemIndex: number) {
-        return pos - linePos < this.items[itemIndex].value;
-    }
-
     setPairLines(lines: Line[]) {
         this._pairLines = new Map(lines.map(m => [m._lineIndex, m]));
     }
@@ -137,7 +133,27 @@ export default class Line {
         return forward ? item >= this.lineItems : item < 0;
     }
 
-    private adjustItemIndexes(gap: Gap, ei: number, iei: [number, boolean, number], forward = true) {
+    private sumWhile(start: number, func: (sum: number) => boolean, forward = true) {
+        let [sum, shift] = [0, 0];
+
+        for (let i = start; forward ? i < this.lineItems : i >= 0; forward ? i++ : i--) {
+            sum += this.items[i].value;
+
+            if (func(sum))
+                shift++;
+            else
+                break;
+
+            sum += this.dotCount(i, forward);
+        }
+
+        return shift;
+    }
+
+    private adjustItemIndexes(gap: Gap, ei: number, ie: [number, boolean], forward = true) {
+        const itemShift = this.sumWhile(ie[0], s => s <= gap.size, forward);
+        let iei = [...ie, itemShift] as [number, boolean, number];
+
         if (!gap.isFull && (iei[2] > 1 || (iei[2] === 1 && !gap.points.size)))
             iei[1] = false;
 
@@ -204,23 +220,9 @@ export default class Line {
 
                 if (includeItems) {
 
-                    let sum = 0;
                     let itemShift = 0;
-
-                    for (let i = item; i < this.lineItems; i++) {
-                        sum += this.items[i].value;
-
-                        if (sum <= gap.size) {
-                            itemShift++;
-                        }
-                        else
-                            break;
-
-                        sum += this.dotCount(i);
-                    }
-
                     [item, equality, itemShift]
-                        = this.adjustItemIndexes(gap, equalityItem, [item, equality, itemShift]);
+                        = this.adjustItemIndexes(gap, equalityItem, [item, equality]);
 
                     if (equality)
                         equalityItem = item + itemShift;
@@ -250,8 +252,11 @@ export default class Line {
 
     *getBlocks(includeItems = false) {
         for (const gap of this.getGaps(includeItems)) {
-            for (const block of gap[0].getBlocks())
+            for (const block of gap[0].getBlocks()) {
+                const sum = block.start - gap[0].start - 1;
+                gap[1].indexAtBlock += this.sumWhile(gap[1].index, s => s <= sum);
                 yield [block, ...gap] as [Block, Gap, LineSegment, { i: number }];
+            }
         }
     }
 
@@ -260,23 +265,9 @@ export default class Line {
         let equalityItem = item;
 
         for (const gap of this.getGapsB(pos)) {
-            let sum = 0;
             let itemShift = 0;
-
-            for (let i = item; i >= 0; i--) {
-                sum += this.items[i].value;
-
-                if (sum <= gap.size) {
-                    itemShift++;
-                }
-                else
-                    break;
-
-                sum += this.dotCountB(i);
-            }
-
             [item, equality, itemShift]
-                = this.adjustItemIndexes(gap, equalityItem, [item, equality, itemShift], false);
+                = this.adjustItemIndexes(gap, equalityItem, [item, equality], false);
 
             if (equality)
                 equalityItem = item - itemShift;
@@ -418,12 +409,8 @@ export default class Line {
         return [start, end];
     }
 
-    dotCount(index: number) {
-        return this.shouldAddDots(index)[1] ? 1 : 0;
-    }
-
-    dotCountB(index: number) {
-        return this.shouldAddDots(index)[0] ? 1 : 0;
+    dotCount(index: number, forward = true) {
+        return this.shouldAddDots(index)[forward ? 1 : 0] ? 1 : 0;
     }
 
     isLineIsolated() {

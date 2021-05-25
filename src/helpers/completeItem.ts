@@ -7,6 +7,8 @@ export default function completeItem(lines: Line[]) {
         let blockCount = 0;
 
         for (const [block, gap, ls, skip] of line.getBlocks(true)) {
+            const { indexAtBlock, equalityIndex } = ls;
+
             //max item
             if (line.maxItem === block.size) {
                 line.addDot(block.start - 1);
@@ -26,6 +28,15 @@ export default function completeItem(lines: Line[]) {
 
                 line.addDot(block.start - 1);
                 line.addDot(block.end + 1);                
+            }
+            else if (line.filterItems(equalityIndex, indexAtBlock).every(e => e.value <= block.size)) {
+                if (block.start - 1 > gap.start)
+                    blockCount--;
+                else
+                    skip.i = block.end;
+
+                line.addDot(block.start - 1);
+                line.addDot(block.end + 1);
             }
             else {
                 const lsEnd = line.getItemsAtPositionB(gap.end + 1);
