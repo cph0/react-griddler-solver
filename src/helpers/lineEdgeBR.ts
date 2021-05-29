@@ -1,5 +1,5 @@
 import 'regenerator-runtime/runtime';
-import { Line } from "../classes/index";
+import { Action, Line } from "../classes/index";
 import forEachLine from './forEachLine';
 
 export function* possibleIndexesB(lineLength: number, value: number, offset = 0) {
@@ -19,7 +19,7 @@ export function lineEdgeBR2(lines: Line[]) {
             if (line.points.has(index))
                 pointCount++;
             else if (pointCount > 0) {
-                line.addPoint(index, colour, line.lineItems - 1);
+                line.addPoint(index, colour, Action.LineBackwardShift, line.lineItems - 1);
                 pointCount++;
             }
         }
@@ -33,9 +33,9 @@ export function lineEdgeBR2(lines: Line[]) {
         if (pointCount > value)
             console.error(`lineEdgeBR too big ${pointCount} ${value}`);
 
-        line.addDots(extend + value + 1, end);
+        line.addDots(extend + value + 1, end, Action.LineBackDots);
 
         if (pointCount === value)
-            line.addDot(extend);
+            line.addDot(extend, Action.CompleteItem);
     }
 }

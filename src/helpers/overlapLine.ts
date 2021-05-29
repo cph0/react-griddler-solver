@@ -1,6 +1,7 @@
-import { Line } from "../classes/index";
+import { Action, Line } from "../classes/index";
 
-export function overlapPart(line: Line, position: number, lineEnd: number, startIndex: number, endIndex: number) {
+export function overlapPart(line: Line, position: number, lineEnd: number,
+    startIndex: number, endIndex: number, action: Action) {
     let LinePosition = position;
     const LineFlagsForward: Set<string> = new Set();
     const LineFlagsBackward: Set<string> = new Set();
@@ -29,7 +30,7 @@ export function overlapPart(line: Line, position: number, lineEnd: number, start
 
         for (let Pos = position; Pos <= lineEnd; Pos++) {
             if (LineFlagsForward.has(`${Pos}_${index}`) && LineFlagsBackward.has(`${Pos}_${index}`))
-                line.addPoint(Pos, colour, itemIndex);
+                line.addPoint(Pos, colour, action, itemIndex);
         }
     }
 }
@@ -37,7 +38,7 @@ export function overlapPart(line: Line, position: number, lineEnd: number, start
 export default function overlapLine(lines: Line[]) {
     for (const line of lines) {
         if (!line.complete && line.lineValue < line.lineLength && line.lineValue > line.lineLength / 2) {
-            overlapPart(line, 0, line.lineLength - 1, 0, line.lineItems - 1);
+            overlapPart(line, 0, line.lineLength - 1, 0, line.lineItems - 1, Action.OverlapLine);
         }
     }
 }

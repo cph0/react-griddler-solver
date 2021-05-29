@@ -1,4 +1,4 @@
-import { Line } from "../classes/index";
+import { Action, Line } from "../classes/index";
 import forEachLine from "./forEachLine";
 
 export default function lineBlocks(lines: Line[]) {
@@ -21,7 +21,7 @@ export default function lineBlocks(lines: Line[]) {
             if (!line.dots.has(block.end + 1) && line.points.has(block.end + 2)) {
                 const nextBlock = gap.getBlockAtStart(block.end + 2);
                 if (nextBlock && line.items.every(e => e.value < nextBlock.end - block.start + 1)) {
-                    line.addDot(block.end + 1);
+                    line.addDot(block.end + 1, Action.NoJoin);
                     blockCount++;
                     continue;
                 }
@@ -33,7 +33,7 @@ export default function lineBlocks(lines: Line[]) {
                 if (!line.some(line.pair(), s => s[0].value >= block.size
                     && s[0].value <= block.end - gap.start + 1
                     && s[1].value <= gap.end - (block.end + 2) + 1)) {
-                    line.addPoint(block.end + 1, block.colour as string);
+                    line.addPoint(block.end + 1, block.colour as string, Action.MustJoin);
                 }
             }
 
@@ -52,7 +52,7 @@ export default function lineBlocks(lines: Line[]) {
             }
             const mB = minItemBackwards();
             if (gap.end - mB + 1 < block.start)
-                line.addPoints(gap.end - mB + 1, block.start - 1, "black");
+                line.addPoints(gap.end - mB + 1, block.start - 1, "black", Action.MinItem);
 
             //min item forwards
             const minItemForwards = () => {
@@ -74,7 +74,7 @@ export default function lineBlocks(lines: Line[]) {
             }
             const m = minItemForwards();
             if (gap.start + m - 1 > block.end)
-                line.addPoints(block.end + 1, gap.start + m - 1, "black");
+                line.addPoints(block.end + 1, gap.start + m - 1, "black", Action.MinItem);
 
             //single item start
             const singleItemStart = () => {
@@ -98,7 +98,7 @@ export default function lineBlocks(lines: Line[]) {
             }
             const sis = singleItemStart();
             if (sis && block.end - sis >= gap.start) {
-                line.addDots(gap.start, block.end - sis);
+                line.addDots(gap.start, block.end - sis, Action.ItemBackwardReach);
                 skip.i = block.end;
             }
 
@@ -124,7 +124,7 @@ export default function lineBlocks(lines: Line[]) {
             }
             const sie = singleItemEnd();
             if (sie && block.start + sie <= gap.end)
-                line.addDots(block.start + sie, gap.end);
+                line.addDots(block.start + sie, gap.end, Action.ItemForwardReach);
 
             //isolated items reach
             if (lineIsolated && gap.numberOfBlocks > 1
@@ -142,7 +142,7 @@ export default function lineBlocks(lines: Line[]) {
                 }
 
                 if(nextBlock)
-                    line.addDots(start, nextBlock.end - nextItem.value);
+                    line.addDots(start, nextBlock.end - nextItem.value, Action.IsolatedItemsReach);
             }
 
             blockCount++;
