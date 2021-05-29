@@ -4,6 +4,7 @@ import { Item } from "../interfaces";
 import Block from './Block';
 import Gap from './Gap';
 import LineSegment from './LineSegment';
+import { Action } from './Path';
 
 export default class Line {
     private readonly _lineIndex: number;
@@ -133,7 +134,7 @@ export default class Line {
         return forward ? item >= this.lineItems : item < 0;
     }
 
-    private sumWhile(start: number, func: (sum: number) => boolean, forward = true) {
+    sumWhile(start: number, func: (sum: number) => boolean, forward = true) {
         let [sum, shift] = [0, 0];
 
         for (let i = start; forward ? i < this.lineItems : i >= 0; forward ? i++ : i--) {
@@ -333,31 +334,31 @@ export default class Line {
         }
     }
 
-    addPoints(start: number, end: number, colour: string, itemIndex?: number) {
+    addPoints(start: number, end: number, colour: string, action: Action, itemIndex?: number) {
         for (let i = start; i <= end; i++)
-            this.addPoint(i, colour, itemIndex);
+            this.addPoint(i, colour, action, itemIndex);
     }
 
-    addPoint(index: number, colour: string, itemIndex?: number, fromPair = false) {
+    addPoint(index: number, colour: string, action: Action, itemIndex?: number, fromPair = false) {
         const gap = this.findGapAtPosB(index);
 
         if (gap)
-            gap.addPoint(index, colour, itemIndex);
+            gap.addPoint(index, colour, action, itemIndex);
 
         if (!fromPair) {
             const pairLine = this._pairLines.get(index);
 
             if (pairLine)
-                pairLine.addPoint(this._lineIndex, colour, undefined, true);
+                pairLine.addPoint(this._lineIndex, colour, action, undefined, true);
         }
     }
 
-    addDots(start: number, end: number) {
+    addDots(start: number, end: number, action: Action) {
         for (let i = start; i <= end; i++)
-            this.addDot(i);
+            this.addDot(i, action);
     }
 
-    addDot(index: number, fromPair = false) {
+    addDot(index: number, action: Action, fromPair = false) {
         const hasDot = this.dots.has(index);
         if (!hasDot && index >= 0 && index <= this.lineLength - 1) {
 
@@ -368,7 +369,7 @@ export default class Line {
                 const pairLine = this._pairLines.get(index);
 
                 if (pairLine)
-                    pairLine.addDot(this._lineIndex, true);
+                    pairLine.addDot(this._lineIndex, action, true);
             }
         }
     }

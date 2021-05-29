@@ -1,5 +1,5 @@
 import 'regenerator-runtime/runtime';
-import { Line } from "../classes/index";
+import { Action, Line } from "../classes/index";
 import forEachLine from './forEachLine';
 
 export function* possibleIndexes(value: number, offset = 0) {
@@ -18,7 +18,7 @@ export function lineEdgeTL2(lines: Line[]) {
             if (line.points.has(index))
                 pointCount++;
             else if (pointCount > 0) {
-                line.addPoint(index, colour, 0);
+                line.addPoint(index, colour, Action.LineForwardShift, 0);
                 pointCount++;
             }
         }
@@ -32,10 +32,10 @@ export function lineEdgeTL2(lines: Line[]) {
         if (pointCount > value)
             console.error(`lineEdgeTL too big ${pointCount} ${value}`);
 
-        line.addDots(start, extend - value - 1);
+        line.addDots(start, extend - value - 1, Action.LineBackDots);
 
         if (pointCount === value)
-            line.addDot(extend);
+            line.addDot(extend, Action.CompleteItem);
     }
 }
 
@@ -53,13 +53,13 @@ export default function lineEdgeTL(lines: Line[]) {
 
                     //forward shift and end dot
                     for (let i = Pos + 1; i < linePosition + line.items[currentItem].value - 1; i++) {
-                        line.addPoint(i, line.items[currentItem].colour);
+                        line.addPoint(i, line.items[currentItem].colour, Action.LineForwardShift);
                     }
 
                     if (Pos - linePosition === 0
                         && Pos + line.items[currentItem].value < line.lineLength
                         && line.shouldAddDots(currentItem)[1]) {
-                        line.addDot(Pos + line.items[currentItem].value);
+                        line.addDot(Pos + line.items[currentItem].value, Action.CompleteItem);
                     }
 
                     //back dots
@@ -67,7 +67,7 @@ export default function lineEdgeTL(lines: Line[]) {
                     if (Pos - linePosition < line.items[currentItem].value
                         && backReach >= endIndex) {
                         for (let i = Pos + 1; i < linePosition + line.items[currentItem].value - 1; i++) {
-                            line.addPoint(i, line.items[currentItem].colour);
+                            line.addPoint(i, line.items[currentItem].colour, Action.LineBackDots);
                         }
                     }
 

@@ -1,6 +1,7 @@
 import IndexMap from "ts-index-map";
 import { Item } from "../interfaces";
 import Block from "./Block";
+import { Action } from "./Path";
 
 export default class Gap extends Block {
     private _nextEmpty: number;
@@ -150,7 +151,7 @@ export default class Gap extends Block {
         this._blocks.add(new Block(start, end, colour, item));
     }
 
-    addPoint(index: number, colour: string, item?: number) {
+    addPoint(index: number, colour: string, action: Action, item?: number) {
         if (!this.points.has(index)) {
             this.points.set(index, colour);
             this.addBlock(index, colour, item);

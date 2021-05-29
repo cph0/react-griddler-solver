@@ -1,4 +1,4 @@
-import { Line } from "../classes/index";
+import { Action, Line } from "../classes/index";
 import forEachLine from "./forEachLine";
 
 export default function fullLineDots(lines: Line[]) {
@@ -8,7 +8,7 @@ export default function fullLineDots(lines: Line[]) {
 
         for (let Pos = 0; Pos < line.lineLength; Pos++) {
             if (!line.points.has(Pos))
-                line.addDot(Pos);
+                line.addDot(Pos, Action.FullLineDots);
         }        
     }
 }
