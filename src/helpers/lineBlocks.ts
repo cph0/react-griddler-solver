@@ -13,9 +13,10 @@ export default function lineBlocks(lines: Line[]) {
                 continue;
             }
 
-            const { index, equalityIndex } = ls;
+            const { index, equalityIndex, equality, valid } = ls;
             const lsEnd = line.getItemsAtPositionB(gap.end + 1);
-            const { index: indexE, equalityIndex: equalityIndexE } = lsEnd;
+            const { index: indexE, equalityIndex: equalityIndexE,
+                equality: equalityE, valid: validE } = lsEnd;
 
             //no join
             if (!line.dots.has(block.end + 1) && line.points.has(block.end + 2)) {
@@ -29,11 +30,20 @@ export default function lineBlocks(lines: Line[]) {
 
             //must join
             if (!line.dots.has(block.end + 1) && !line.points.has(block.end + 1)
-                && line.points.has(block.end + 2)) {
-                if (!line.some(line.pair(), s => s[0].value >= block.size
+                && line.points.has(block.end + 2)
+                && !line.some(line.pair(), s => s[0].value >= block.size
                     && s[0].value <= block.end - gap.start + 1
-                    && s[1].value <= gap.end - (block.end + 2) + 1)) {
-                    line.addPoint(block.end + 1, block.colour as string, Action.MustJoin);
+                    && s[1].value <= gap.end - (block.end + 2) + 1)) {                
+                line.addPoint(block.end + 1, block.colour, Action.MustJoin);
+            } else if (equality && equalityE && index + 1 === indexE) {
+                const lastBlock = gap.getLastBlock(block.start - 1);
+                const nextBlock = gap.getNextBlock(block.end + 1);
+
+                if (lastBlock && nextBlock) {
+                    const isolated = line.isolatedPart(index, block, lastBlock);
+
+                    if (isolated)
+                        line.addPoints(block.end + 1, nextBlock.start - 1, block.colour, Action.MustJoin);
                 }
             }
 
@@ -41,11 +51,21 @@ export default function lineBlocks(lines: Line[]) {
             const minItemBackwards = () => {
                 let minItem = line.minItem;
 
-                if (indexE > 0 || equalityIndexE < line.lineItems - 1) {
-                    const anyFitsBefore = line.filterItems(indexE, equalityIndexE)
-                        .some(s => gap.end - s.value > block.end);
-                    if(!anyFitsBefore)
-                        minItem = line.min(indexE, equalityIndexE, block.size);
+                if ((indexE > 0 || equalityIndexE < line.lineItems - 1)
+                    && !line.filterItems(indexE, equalityIndexE)
+                        .some(s => gap.end - s.value > block.end)) {
+                    minItem = line.min(indexE, equalityIndexE, block.size);
+                } else if (equalityE && validE) {
+                    const nextBlock = gap.getNextBlock(block.start + 1);
+                    if (nextBlock) {
+                        const sum = gap.end - block.end - 1;
+                        const itemShift = line.sumWhile(indexE, s => s <= sum, false);
+                        const isolated = line.isolatedPart(indexE, block, nextBlock, false);
+
+                        if (itemShift === 1 && isolated) {
+                            minItem = line.sum(true, indexE - 1, indexE);
+                        }
+                    }
                 }
 
                 return minItem;
@@ -63,11 +83,21 @@ export default function lineBlocks(lines: Line[]) {
 
                 if (distinctItems.size === 1)
                     minItem = line.items.map(m => m.value).find(f => f >= block.size) as number;
-                else if (equalityIndex > 0 || index < line.lineItems - 1) {
-                    const anyFitsBefore = line.filterItems(equalityIndex, index)
-                        .some(s => gap.start + s.value < block.start);
-                    if(!anyFitsBefore)
-                        minItem = line.min(equalityIndex, index, block.size);
+                else if ((equalityIndex > 0 || index < line.lineItems - 1)
+                    && !line.filterItems(equalityIndex, index)
+                        .some(s => gap.start + s.value < block.start)) {
+                    minItem = line.min(equalityIndex, index, block.size);
+                } else if (equality && valid) {
+                    const lastBlock = gap.getLastBlock(block.start - 1);
+                    if (lastBlock) {
+                        const sum = block.start - gap.start - 1;
+                        const itemShift = line.sumWhile(index, s => s <= sum);
+                        const isolated = line.isolatedPart(index, block, lastBlock);
+
+                        if (itemShift === 1 && isolated) {
+                            minItem = line.sum(true, index, index + 1);
+                        }
+                    }
                 }
 
                 return minItem;
@@ -84,6 +114,10 @@ export default function lineBlocks(lines: Line[]) {
                     && block.end - line.items[blockCount].value >= gap.start) {
                     singleItem = line.items[blockCount].value;
                 }
+                else if (equality && equalityE && index === indexE
+                    && gap.numberOfBlocks === 1) {
+                    singleItem = line.filterItems(index, indexE)[0].value;
+                }
                 else if ((equalityIndex > 0 || index < line.lineItems - 1)
                     && line.min(equalityIndex, index) >= block.start - gap.start) {
                     singleItem = line.max(equalityIndex, index);
@@ -91,7 +125,7 @@ export default function lineBlocks(lines: Line[]) {
                 else if (line.items.filter(f => f.value >= block.size).length === 1) {
                     const itm = line.items.find(f => f.value >= block.size);
                     if (itm && itm.index === 0)
-                        singleItem = line.items.map(m => m.value).find(f => f >= block.size);
+                        singleItem = itm.value;
                 }
 
                 return singleItem;
@@ -129,17 +163,9 @@ export default function lineBlocks(lines: Line[]) {
             //isolated items reach
             if (lineIsolated && gap.numberOfBlocks > 1
                 && blockCount < line.lineItems - 1) {
-                const itm = line.items[blockCount];
                 const nextItem = line.items[blockCount + 1];
-                const start = block.start + itm.value;
-                let nextBlock;
-
-                for (let i = start; i <= gap.end; i++) {
-                    nextBlock = gap.getBlockAtStart(i);
-
-                    if (nextBlock)
-                        break;
-                }
+                const start = block.start + line.items[blockCount].value;
+                const nextBlock = gap.getNextBlock(start);
 
                 if(nextBlock)
                     line.addDots(start, nextBlock.end - nextItem.value, Action.IsolatedItemsReach);

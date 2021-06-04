@@ -1,13 +1,13 @@
 import IndexMap from "ts-index-map";
 import { Item } from "../interfaces";
+import Range from "./Range";
 import Block from "./Block";
 import { Action } from "./Path";
 
-export default class Gap extends Block {
+export default class Gap extends Range {
     private _nextEmpty: number;
     private _nextEmptyB: number;
     private readonly _blocks: IndexMap<Block>;
-    public readonly points: Map<number, string>;
 
     public readonly startItemsYes: Set<number>;
     public readonly startItemsNo: Set<number>;
@@ -33,12 +33,11 @@ export default class Gap extends Block {
         return firstBlock && firstBlock.end === this.end;
     }
 
-    constructor(start: number, end: number, blocks?: Block[], points?: [number, string][]) {
+    constructor(start: number, end: number, blocks?: Block[]) {
         super(start, end);
         this._nextEmpty = start;
         this._nextEmptyB = end;
         this._blocks = new IndexMap(['start', 'end'], blocks || []);
-        this.points = new Map(points || []);
         this.startItemsYes = new Set();
         this.startItemsNo = new Set();
         this.refreshStartItems();
@@ -53,8 +52,8 @@ export default class Gap extends Block {
         for (let i = this.start; i <= this.end; i++) {
             const block = this._blocks.get('start', i)[0];
 
-            if(block)
-                yield block;
+            if (block)
+                yield block;            
         }
     }
 
@@ -64,6 +63,32 @@ export default class Gap extends Block {
 
     getBlockAtEnd(end: number) {
         return this._blocks.get('end', end)[0];
+    }
+
+    getLastBlock(start: number) {
+        let lastBlock;
+
+        for (let i = start; i >= this.start; i--) {
+            lastBlock = this.getBlockAtEnd(i);
+
+            if (lastBlock)
+                break;
+        }
+
+        return lastBlock;
+    }
+
+    getNextBlock(start: number) {
+        let nextBlock;
+
+        for (let i = start; i <= this.end; i++) {
+            nextBlock = this.getBlockAtStart(i);
+
+            if (nextBlock)
+                break;
+        }
+
+        return nextBlock;
     }
 
     private refreshStartItems() {
@@ -79,7 +104,7 @@ export default class Gap extends Block {
             for (let i = this.start + 1; i <= this.end; i++) {
                 const block = this._blocks.get('start', i)[0];
 
-                if(block)
+                if (block)
                     this.startItemsNo.add(block.start - this.start);
             }
         }
@@ -93,22 +118,18 @@ export default class Gap extends Block {
     }
 
     setStart(start: number) {
-        this.start = start;
+        super.setStart(start);
         this._nextEmpty = start;
         this.refreshStartItems();
     }
 
     setEnd(end: number) {
-        this.end = end;
+        super.setEnd(end);
         this._nextEmptyB = end;
         this.refreshEndItems();
     }
 
     splitGap(index: number) {
-        this._nextEmptyB = index - 1;
-
-        while (this.points.has(this._nextEmptyB))
-            this._nextEmptyB--;
 
         const blocks: Block[] = [];
         for (let i = index + 1; i <= this.end; i++) {
@@ -119,16 +140,8 @@ export default class Gap extends Block {
             }
         }
 
-        const points: [number, string][] = [];
-        this.points.forEach((f, k) => {
-            if (k > index) {
-                points.push([k, f]);
-                this.points.delete(k);
-            }
-        });
-
-        const rightGap = new Gap(index + 1, this.end, blocks, points);
-        this.end = index - 1;
+        const rightGap = new Gap(index + 1, this.end, blocks);
+        this.setEnd(index - 1);
         return rightGap;
     }
 
@@ -152,21 +165,18 @@ export default class Gap extends Block {
     }
 
     addPoint(index: number, colour: string, action: Action, item?: number) {
-        if (!this.points.has(index)) {
-            this.points.set(index, colour);
-            this.addBlock(index, colour, item);
+        this.addBlock(index, colour, item);
 
-            if (index === this._nextEmpty) {
-                this.startItemsNo.add(this._nextEmpty - this.start);
-                this.startItemsYes.add(1);
-                this._nextEmpty++;
-            }
-            else if (this._nextEmpty > this.start) //index >= this._nextEmpty + 1
-                this.startItemsNo.add(index - this.start);
+        if (index === this._nextEmpty) {
+            this.startItemsNo.add(this._nextEmpty - this.start);
+            this.startItemsYes.add(1);
+            this._nextEmpty++;
+        }
+        else if (this._nextEmpty > this.start) //index >= this._nextEmpty + 1
+            this.startItemsNo.add(index - this.start);
 
-            if (index === this._nextEmptyB) {
-                this._nextEmptyB--;
-            }
+        if (index === this._nextEmptyB) {
+            this._nextEmptyB--;
         }
     }
 }

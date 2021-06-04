@@ -5,6 +5,7 @@ export default class LineSegment {
     public readonly equalityIndex: number;
     public readonly item: Item | null;
     public indexAtBlock: number;
+    public isIsolated = true;
 
     get valid() {
         return !!this.item;
