@@ -9,10 +9,13 @@ export interface Griddler {
     dots: Point[];
 }
 
-export interface Item {
+export interface Colour {
+    colour: string;
+}
+
+export interface Item extends Colour {
     index: number;
     value: number;
-    colour: string;
 }
 
 export interface Point {
