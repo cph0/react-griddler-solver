@@ -1,9 +1,11 @@
-import { Action, Line } from "../classes/index";
+import { Action, Block, Line } from "../classes/index";
 import forEachLine from "./forEachLine";
+import { overlapPart } from "./overlapLine";
 
 export default function lineBlocks(lines: Line[]) {
     for (const line of forEachLine(lines)) {
         const lineIsolated = line.isLineIsolated();
+        let lastBlock: Block | undefined;
         let blockCount = 0;
 
         for (const [block, gap, ls, skip] of line.getBlocks(true)) {
@@ -14,7 +16,7 @@ export default function lineBlocks(lines: Line[]) {
             }
 
             const { index, equalityIndex, equality, valid } = ls;
-            const lsEnd = line.getItemsAtPositionB(gap.end + 1);
+            const lsEnd = line.getItemsAtPositionB(gap, block);
             const { index: indexE, equalityIndex: equalityIndexE,
                 equality: equalityE, valid: validE } = lsEnd;
 
@@ -33,7 +35,7 @@ export default function lineBlocks(lines: Line[]) {
                 && line.points.has(block.end + 2)
                 && !line.some(line.pair(), s => s[0].value >= block.size
                     && s[0].value <= block.end - gap.start + 1
-                    && s[1].value <= gap.end - (block.end + 2) + 1)) {                
+                    && s[1].value <= gap.end - (block.end + 2) + 1)) {
                 line.addPoint(block.end + 1, block.colour, Action.MustJoin);
             } else if (equality && equalityE && index + 1 === indexE) {
                 const lastBlock = gap.getLastBlock(block.start - 1);
@@ -49,26 +51,26 @@ export default function lineBlocks(lines: Line[]) {
 
             //min item backwards
             const minItemBackwards = () => {
-                let minItem = line.minItem;
 
-                if ((indexE > 0 || equalityIndexE < line.lineItems - 1)
-                    && !line.filterItems(indexE, equalityIndexE)
-                        .some(s => gap.end - s.value > block.end)) {
-                    minItem = line.min(indexE, equalityIndexE, block.size);
-                } else if (equalityE && validE) {
+                if (equalityE && validE) {
                     const nextBlock = gap.getNextBlock(block.start + 1);
                     if (nextBlock) {
-                        const sum = gap.end - block.end - 1;
-                        const itemShift = line.sumWhile(indexE, s => s <= sum, false);
+                        const itemShift = line.sumWhile(indexE, gap, block, false);
                         const isolated = line.isolatedPart(indexE, block, nextBlock, false);
 
-                        if (itemShift === 1 && isolated) {
-                            minItem = line.sum(true, indexE - 1, indexE);
-                        }
+                        if (itemShift === 1 && isolated)
+                            return line.sum(true, line.filterItems(indexE - 1, indexE));
                     }
                 }
 
-                return minItem;
+                if (index === 0 && block.end === gap.end && blockCount === 1) {
+                    const iS = line.sumWhile(0, gap);
+                    if (iS === 2 && lastBlock
+                        && line.isolatedPart(iS - 2, block, lastBlock))
+                        return line.items[iS - 1].value;
+                }
+
+                return line.min(line.itemsInRange(ls, lsEnd), block.size);
             }
             const mB = minItemBackwards();
             if (gap.end - mB + 1 < block.start)
@@ -76,31 +78,25 @@ export default function lineBlocks(lines: Line[]) {
 
             //min item forwards
             const minItemForwards = () => {
-                let minItem = line.minItem;
                 const distinctItems = new Set(line.items
                     .filter(f => f.value >= block.size)
                     .map(m => m.value));
 
                 if (distinctItems.size === 1)
-                    minItem = line.items.map(m => m.value).find(f => f >= block.size) as number;
-                else if ((equalityIndex > 0 || index < line.lineItems - 1)
-                    && !line.filterItems(equalityIndex, index)
-                        .some(s => gap.start + s.value < block.start)) {
-                    minItem = line.min(equalityIndex, index, block.size);
-                } else if (equality && valid) {
+                    return line.items.map(m => m.value).find(f => f >= block.size) as number;
+
+                if (equality && valid) {
                     const lastBlock = gap.getLastBlock(block.start - 1);
                     if (lastBlock) {
-                        const sum = block.start - gap.start - 1;
-                        const itemShift = line.sumWhile(index, s => s <= sum);
+                        const itemShift = line.sumWhile(index, gap, block);
                         const isolated = line.isolatedPart(index, block, lastBlock);
 
-                        if (itemShift === 1 && isolated) {
-                            minItem = line.sum(true, index, index + 1);
-                        }
+                        if (itemShift === 1 && isolated)
+                            return line.sum(true, line.filterItems(index, index + 1));
                     }
                 }
 
-                return minItem;
+                return line.min(line.itemsInRange(ls, lsEnd), block.size);
             }
             const m = minItemForwards();
             if (gap.start + m - 1 > block.end)
@@ -110,7 +106,8 @@ export default function lineBlocks(lines: Line[]) {
             const singleItemStart = () => {
                 let singleItem;
 
-                if (lineIsolated && (gap.numberOfBlocks === 1 || blockCount === 0)
+                if (lineIsolated && (gap.numberOfBlocks === 1 || blockCount === 0
+                    || !gap.getLastBlock(block.start - 1))
                     && block.end - line.items[blockCount].value >= gap.start) {
                     singleItem = line.items[blockCount].value;
                 }
@@ -119,13 +116,13 @@ export default function lineBlocks(lines: Line[]) {
                     singleItem = line.filterItems(index, indexE)[0].value;
                 }
                 else if ((equalityIndex > 0 || index < line.lineItems - 1)
-                    && line.min(equalityIndex, index) >= block.start - gap.start) {
-                    singleItem = line.max(equalityIndex, index);
+                    && line.min(line.filterItems(equalityIndex, index)) >= block.start - gap.start) {
+                    singleItem = line.max(line.filterItems(equalityIndex, index));
                 }
-                else if (line.items.filter(f => f.value >= block.size).length === 1) {
-                    const itm = line.items.find(f => f.value >= block.size);
-                    if (itm && itm.index === 0)
-                        singleItem = itm.value;
+                else {
+                    const items = line.filter(line.itemsInRange(ls), f => f.value >= block.size);
+                    if (items.length === 1 && items[0].index === equalityIndex)
+                        singleItem = items[0].value;
                 }
 
                 return singleItem;
@@ -141,17 +138,17 @@ export default function lineBlocks(lines: Line[]) {
                 let singleItem;
 
                 if (lineIsolated && (gap.numberOfBlocks === 1
-                    || blockCount === line.lineItems - 1)) {
+                    || blockCount === line.lineItems - 1 || !gap.getNextBlock(block.end + 1))) {
                     singleItem = line.items[blockCount].value;
                 }
                 else if ((indexE > 0 || equalityIndexE < line.lineItems - 1)
-                            && line.min(indexE, equalityIndexE) >= gap.end - block.end) {
-                    singleItem = line.max(indexE, equalityIndexE);
+                    && line.min(line.filterItems(indexE, equalityIndexE)) >= gap.end - block.end) {
+                    singleItem = line.max(line.filterItems(indexE, equalityIndexE));
                 }
-                else if (line.items.filter(f => f.value >= block.size).length === 1) {
-                    const itm = line.items.find(f => f.value >= block.size);
-                    if(itm && itm.index === line.lineItems - 1)
-                        singleItem = line.items.map(m => m.value).find(f => f >= block.size);
+                else {
+                    const items = line.filter(line.itemsInRange(lsEnd), f => f.value >= block.size);
+                    if (items.length === 1 && items[0].index === equalityIndexE)
+                        singleItem = items[0].value;
                 }
 
                 return singleItem;
@@ -160,6 +157,15 @@ export default function lineBlocks(lines: Line[]) {
             if (sie && block.start + sie <= gap.end)
                 line.addDots(block.start + sie, gap.end, Action.ItemForwardReach);
 
+            //half gap overlap backwards
+            const uniqueItems = line.itemsInRange(ls, lsEnd).filter(f => f.value >= block.size);
+            if (uniqueItems.length === 1 && uniqueItems[0].index > index) {
+                const sum = line.sum(true, line.filterItems(index, uniqueItems[0].index - 1));
+                const space = block.start - gap.start - 1 - line.dotCount(uniqueItems[0].index, false);//line.spaceBetween(,); 
+                if (sum <= space && sum > space / 2)
+                    overlapPart(line, gap.start, block.start - 2, index, uniqueItems[0].index - 1, Action.HalfGapOverlap);
+            }
+
             //isolated items reach
             if (lineIsolated && gap.numberOfBlocks > 1
                 && blockCount < line.lineItems - 1) {
@@ -167,11 +173,12 @@ export default function lineBlocks(lines: Line[]) {
                 const start = block.start + line.items[blockCount].value;
                 const nextBlock = gap.getNextBlock(start);
 
-                if(nextBlock)
+                if (nextBlock)
                     line.addDots(start, nextBlock.end - nextItem.value, Action.IsolatedItemsReach);
             }
 
             blockCount++;
+            lastBlock = block;
         }
     }
 }
