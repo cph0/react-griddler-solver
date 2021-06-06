@@ -85,15 +85,25 @@ export enum Action {
     */
     ItemBackwardReach = 17,
     /**
+     * 2,2,1,1,1,2,1,1// --0--.0| to --0.0.0|
+     * Between solid and end, next item equals length
+    */
+    HalfGapFullPart = 18,
+    /**
+     * ...,2,2//.--0----| to .--0--0-|
+     * Between solid and end, next item is over half the length     
+    */
+    HalfGapOverlap = 19,
+    /**
      *  1,2,3|0.----.000| to |0.0---.000|
      *  Try a point at the first possible position
     */
-    TrialAndError = 18,
+    TrialAndError = 20,
     /**
      *  Restrict where items of a certain colour can go by looking at
         the perpendicular lines and their appropriate items.
     */
-    ColourCrossReference = 19
+    ColourCrossReference = 21
 }
 
 export default class Path {

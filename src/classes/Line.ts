@@ -36,28 +36,16 @@ export default class Line {
 
     get minItem() {
 
-        if (!this._minItem) {
-            this._minItem = this.items.reduce((acc, item) => {
-                if (!acc || item.value < acc)
-                    return item.value;
-
-                return acc;
-            }, undefined as number | undefined) as number;
-        }
+        if (!this._minItem)
+            this._minItem = this.min();
 
         return this._minItem;
     }
 
     get maxItem() {
 
-        if (!this._maxItem) {
-            this._maxItem = this.items.reduce((acc, item) => {
-                if (item.value > acc)
-                    return item.value;
-
-                return acc;
-            }, 0);
-        }
+        if (!this._maxItem)
+            this._maxItem = this.max();
 
         return this._maxItem;
     }
@@ -138,13 +126,16 @@ export default class Line {
         return forward ? item >= this.lineItems : item < 0;
     }
 
-    sumWhile(start: number, func: (sum: number) => boolean, forward = true) {
+    sumWhileO(start: number, startPos: number, endPos: number, forward = true) {
         let [sum, shift] = [0, 0];
 
         for (let i = start; forward ? i < this.lineItems : i >= 0; forward ? i++ : i--) {
             sum += this.items[i].value;
 
-            if (func(sum))
+            while (this.points.get(forward ? startPos + sum : endPos - sum) === this.items[i].colour)
+                sum++;
+
+            if (sum <= endPos - startPos + 1)
                 shift++;
             else
                 break;
@@ -155,8 +146,43 @@ export default class Line {
         return shift;
     }
 
+    sumWhile(start: number, gap: Gap, block?: Block, forward = true) {
+        let [sum, shift] = [0, 0];
+        let startPos = gap.start;
+        let endPos = gap.end;
+        let range = gap.size;
+
+        if (block && forward) {
+            if (forward)
+                endPos = block.start;
+            else
+                startPos = block.end;
+            range = endPos - startPos - 1;
+        }
+
+        for (let i = start; forward ? i < this.lineItems : i >= 0; forward ? i++ : i--) {
+            sum += this.items[i].value;
+
+            while (this.points.get(forward ? startPos + sum : endPos - sum) === this.items[i].colour)
+                sum++;
+
+            if (sum <= range)
+                shift++;
+            else {
+                if (block && sum > gap.size)
+                    shift--;
+
+                break;
+            }
+
+            sum += this.dotCount(i, forward);
+        }
+
+        return shift;
+    }
+
     private adjustItemIndexes(gap: Gap, ei: number, ie: [number, boolean], forward = true) {
-        const itemShift = this.sumWhile(ie[0], s => s <= gap.size, forward);
+        const itemShift = this.sumWhile(ie[0], gap, undefined, forward);
         let iei = [...ie, itemShift] as [number, boolean, number];
 
         if (!gap.isFull && (iei[2] > 1 || (iei[2] === 1 && !gap.hasPoints)))
@@ -245,14 +271,14 @@ export default class Line {
         return !!this.find(itr, func);
     }
 
-    *pair() {
-        for (let i = 0; i < this.lineItems - 1; i++)
-            yield [this.items[i], this.items[i + 1]];
+    *pair(arr = this.items) {
+        for (let i = 0; i < arr.length - 1; i++)
+            yield [arr[i], arr[i + 1]];
     }
 
-    *triple() {
-        for (let i = 0; i < this.lineItems - 2; i++)
-            yield [this.items[i], this.items[i + 1], this.items[i + 2]];
+    *triple(arr = this.items) {
+        for (let i = 0; i < arr.length - 2; i++)
+            yield [arr[i], arr[i + 1], arr[i + 2]];
     }
 
     *getGaps(includeItems = false) {
@@ -320,58 +346,18 @@ export default class Line {
 
     *getBlocks(includeItems = false) {
         for (const gap of this.getGaps(includeItems)) {
-            let blockCount = 0;
-            let currentItem = gap[1].equalityIndex;
-            let reachIndex = 0;
-            let lastBlock;
-
             for (const block of gap[0].getBlocks()) {
-                const sum = block.start - gap[0].start - 1;
-                gap[1].indexAtBlock += this.sumWhile(gap[1].index, s => s <= sum);
-
-                if (gap[1].equality && lastBlock && currentItem < this.lineItems) {
-                    const reachIndexCurrent = lastBlock.start + this.items[currentItem].value - 1;
-
-                    if (reachIndexCurrent > reachIndex)
-                        reachIndex = reachIndexCurrent;
-
-                    //previous reach current
-                    if (block.end <= reachIndexCurrent)
-                        gap[1].isIsolated = false;
-
-                    currentItem++;
-
-                    if (currentItem < this.lineItems) {
-                        const backReach = block.end - this.items[currentItem].value + 1
-
-                        //current reach previous
-                        if (backReach <= lastBlock.start)
-                            gap[1].isIsolated = false;
-                    }
-                }
-
-                if (blockCount !== gap[1].indexAtBlock - gap[1].equalityIndex)
-                    gap[1].isIsolated = false;
-
-                if (!lastBlock)
-                    gap[1].isIsolated = false;
-
+                gap[1].indexAtBlock += this.sumWhile(gap[1].index, gap[0], block);
                 yield [block, ...gap] as [Block, Gap, LineSegment, { i: number }];
-
-                if (!lastBlock)
-                    gap[1].isIsolated = true;
-
-                lastBlock = block;
-                blockCount++;
             }
         }
     }
 
-    getItemsAtPositionB(pos: number, block?: Block) {
+    getItemsAtPositionB(currentGap: Gap, block?: Block) {
         let [item, equality] = [this.lineItems - 1, true];
         let equalityItem = item;
 
-        for (const gap of this.getGapsB(pos)) {
+        for (const gap of this.getGapsB(currentGap.end + 1)) {
             let itemShift = 0;
             [item, equality, itemShift]
                 = this.adjustItemIndexes(gap, equalityItem, [item, equality], false);
@@ -387,15 +373,13 @@ export default class Line {
         const theItem = item >= 0 ? this.items[item] : null;
         const lsEnd = new LineSegment(theItem, item, equalityItem);
 
-        if (block) {
-            const sum = (pos - 1) - block.end - 1;
-            lsEnd.indexAtBlock = item - this.sumWhile(item, s => s <= sum, false);
-        }
+        if (block)
+            lsEnd.indexAtBlock = item - this.sumWhileO(item, block.end + 2, currentGap.end, false);
 
         return lsEnd;
     }
 
-    private findGapAtPos(index: number, forward = true) {
+    findGapAtPos(index: number, forward = true) {
         let gap;
 
         for (let i = index; forward ? i <= this.lineLength - 1 : i >= 0; forward ? i++ : i--) {
@@ -476,28 +460,25 @@ export default class Line {
         }
     }
 
-    min(start: number, end: number, min = 1) {
-        return this.items.reduce((acc, item, index) => {
-            if (index >= start && index <= end
-                && item.value >= min && (!acc || item.value < acc))
-                return item.value;
-            return acc;
-        }, undefined as number | undefined) as number;
-    }
-
-    max(start: number, end: number) {
-        return this.items.reduce((acc, item, index) => {
-            if (index >= start && index <= end && item.value > acc)
+    min(arr = this.items, min = 1) {
+        return arr.reduce((acc, item) => {
+            if (item.value >= min && (!acc || item.value < acc))
                 return item.value;
             return acc;
         }, 0);
     }
 
-    sum(includeDots = true, start = 0, end = this.lineItems - 1) {
-        return this.items.reduce((acc, item, index) => {
-            if (index >= start && index <= end)
-                return acc + item.value + (includeDots && index < end ? this.dotCount(index) : 0);
+    max(arr = this.items) {
+        return arr.reduce((acc, item) => {
+            if (item.value > acc)
+                return item.value;
             return acc;
+        }, 0);
+    }
+
+    sum(includeDots = true, arr = this.items) {
+        return arr.reduce((acc, item, index) => {
+            return acc + item.value + (includeDots && index < arr.length - 1 ? this.dotCount(index) : 0);
         }, 0);
     }
 
