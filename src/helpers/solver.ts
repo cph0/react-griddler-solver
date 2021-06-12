@@ -72,8 +72,6 @@ export default function solve(rs: Item[][], cs: Item[][]) {
         lineEdgeBR2(rows);
         lineEdgeBR2(cols);
 
-        //if (count === 3)
-        //    break;
         lineGaps(rows);
         lineGaps(cols);
 
@@ -83,6 +81,8 @@ export default function solve(rs: Item[][], cs: Item[][]) {
         lineBlocks(rows);
         lineBlocks(cols);
 
+        //if (count === 1)
+        //    break;
 
         count++;
 

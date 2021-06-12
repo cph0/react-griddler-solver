@@ -15,7 +15,12 @@ export function lineEdgeTL2(lines: Line[]) {
         let pointCount = 0;
 
         for (const index of possibleIndexes(value, start)) {
-            if (line.points.has(index))
+            const pt = line.points.get(index);
+
+            if (pt && pt !== colour)
+                break;
+
+            if (pt)
                 pointCount++;
             else if (pointCount > 0) {
                 line.addPoint(index, colour, Action.LineForwardShift, 0);
@@ -24,7 +29,7 @@ export function lineEdgeTL2(lines: Line[]) {
         }
 
         let extend = start + value;
-        while (line.points.has(extend)) {
+        while (line.points.get(extend) === colour) {
             extend++;
             pointCount++;
         }
@@ -34,7 +39,7 @@ export function lineEdgeTL2(lines: Line[]) {
 
         line.addDots(start, extend - value - 1, Action.LineBackDots);
 
-        if (pointCount === value)
+        if (pointCount === value && line.shouldAddDots(0)[1])
             line.addDot(extend, Action.CompleteItem);
     }
 }

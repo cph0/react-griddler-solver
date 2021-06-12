@@ -16,7 +16,12 @@ export function lineEdgeBR2(lines: Line[]) {
         let pointCount = 0;
 
         for (const index of possibleIndexesB(line.lineLength, value, offset)) {
-            if (line.points.has(index))
+            const pt = line.points.get(index);
+
+            if (pt && pt !== colour)
+                break;
+
+            if (pt)
                 pointCount++;
             else if (pointCount > 0) {
                 line.addPoint(index, colour, Action.LineBackwardShift, line.lineItems - 1);
@@ -25,7 +30,7 @@ export function lineEdgeBR2(lines: Line[]) {
         }
 
         let extend = end - value;
-        while (line.points.has(extend)) {
+        while (line.points.get(extend) === colour) {
             extend--;
             pointCount++;
         }
@@ -35,7 +40,7 @@ export function lineEdgeBR2(lines: Line[]) {
 
         line.addDots(extend + value + 1, end, Action.LineBackDots);
 
-        if (pointCount === value)
+        if (pointCount === value && line.shouldAddDots(line.lineItems - 1)[0])
             line.addDot(extend, Action.CompleteItem);
     }
 }

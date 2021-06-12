@@ -15,7 +15,7 @@ export default function lineBlocks(lines: Line[]) {
                 continue;
             }
 
-            const { index, equalityIndex, equality, valid } = ls;
+            const { index, equalityIndex, equality, valid, indexAtBlock } = ls;
             const lsEnd = line.getItemsAtPositionB(gap, block);
             const { index: indexE, equalityIndex: equalityIndexE,
                 equality: equalityE, valid: validE } = lsEnd;
@@ -33,7 +33,7 @@ export default function lineBlocks(lines: Line[]) {
             //must join
             if (!line.dots.has(block.end + 1) && !line.points.has(block.end + 1)
                 && line.points.has(block.end + 2)
-                && !line.some(line.pair(), s => s[0].value >= block.size
+                && !line.some(line.pair(), s => block.canBe(s[0])
                     && s[0].value <= block.end - gap.start + 1
                     && s[1].value <= gap.end - (block.end + 2) + 1)) {
                 line.addPoint(block.end + 1, block.colour, Action.MustJoin);
@@ -74,12 +74,12 @@ export default function lineBlocks(lines: Line[]) {
             }
             const mB = minItemBackwards();
             if (gap.end - mB + 1 < block.start)
-                line.addPoints(gap.end - mB + 1, block.start - 1, "black", Action.MinItem);
+                line.addPoints(gap.end - mB + 1, block.start - 1, block.colour, Action.MinItem);
 
             //min item forwards
             const minItemForwards = () => {
                 const distinctItems = new Set(line.items
-                    .filter(f => f.value >= block.size)
+                    .filter(f => block.canBe(f))
                     .map(m => m.value));
 
                 if (distinctItems.size === 1)
@@ -100,7 +100,7 @@ export default function lineBlocks(lines: Line[]) {
             }
             const m = minItemForwards();
             if (gap.start + m - 1 > block.end)
-                line.addPoints(block.end + 1, gap.start + m - 1, "black", Action.MinItem);
+                line.addPoints(block.end + 1, gap.start + m - 1, block.colour, Action.MinItem);
 
             //single item start
             const singleItemStart = () => {
@@ -120,7 +120,7 @@ export default function lineBlocks(lines: Line[]) {
                     singleItem = line.max(line.filterItems(equalityIndex, index));
                 }
                 else {
-                    const items = line.filter(line.itemsInRange(ls), f => f.value >= block.size);
+                    const items = line.filter(line.itemsInRange(ls), f => block.canBe(f));
                     if (items.length === 1 && items[0].index === equalityIndex)
                         singleItem = items[0].value;
                 }
@@ -146,7 +146,7 @@ export default function lineBlocks(lines: Line[]) {
                     singleItem = line.max(line.filterItems(indexE, equalityIndexE));
                 }
                 else {
-                    const items = line.filter(line.itemsInRange(lsEnd), f => f.value >= block.size);
+                    const items = line.filter(line.itemsInRange(lsEnd), f => block.canBe(f));
                     if (items.length === 1 && items[0].index === equalityIndexE)
                         singleItem = items[0].value;
                 }
@@ -156,6 +156,22 @@ export default function lineBlocks(lines: Line[]) {
             const sie = singleItemEnd();
             if (sie && block.start + sie <= gap.end)
                 line.addDots(block.start + sie, gap.end, Action.ItemForwardReach);
+
+            //sum dot forward - for little20x20 breaks boy25x25 
+            if (valid && false && indexAtBlock - 1 >= 0 && indexAtBlock - 1 <= line.lineItems - 1
+                && line.filterItems(equalityIndex, indexAtBlock - 1)
+                .every(e => e.value === block.size)
+                && gap.start + line.sum(true, line.filterItems(index, indexAtBlock - 1)) - 1
+                === block.start - 1 - line.dotCount(indexAtBlock - 1)) {
+                line.addDot(block.start - 1, Action.SumDotForward);
+
+                if (block.start - 1 > gap.start) {
+                    blockCount--;
+                    continue;
+                }
+                else
+                    skip.i = block.end;
+            }
 
             //half gap overlap backwards
             const uniqueItems = line.itemsInRange(ls, lsEnd).filter(f => f.value >= block.size);
