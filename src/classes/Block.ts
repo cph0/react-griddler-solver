@@ -1,5 +1,5 @@
 import Range from "./Range";
-import { Colour } from "../interfaces";
+import { Colour, Item } from "../interfaces";
 
 export default class Block extends Range implements Colour {
     public readonly colour: string;
@@ -9,5 +9,13 @@ export default class Block extends Range implements Colour {
         super(start, end);
         this.colour = colour;
         this.item = item;
+    }
+
+    is(item: Item) {
+        return this.size === item.value && this.colour === item.colour;
+    }
+
+    canBe(item: Item) {
+        return this.size <= item.value && this.colour === item.colour;
     }
 }

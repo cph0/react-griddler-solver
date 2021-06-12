@@ -95,15 +95,20 @@ export enum Action {
     */
     HalfGapOverlap = 19,
     /**
+     * 1,1,1,4,...//|------0--// to |-----.0--
+     * All items before equal solid count and sum fits exactly
+    */
+    SumDotForward = 20,
+    /**
      *  1,2,3|0.----.000| to |0.0---.000|
      *  Try a point at the first possible position
     */
-    TrialAndError = 20,
+    TrialAndError = 21,
     /**
      *  Restrict where items of a certain colour can go by looking at
         the perpendicular lines and their appropriate items.
     */
-    ColourCrossReference = 21
+    ColourCrossReference = 22
 }
 
 export default class Path {

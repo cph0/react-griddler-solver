@@ -137,34 +137,34 @@ import Tea25x25 from './Tea25x25.json';
 import Train25x25 from './Train25x25.json';
 import UFO25x25 from './UFO25x25.json';
 import Zen25x25 from './Zen25x25.json';
-//import Castle30x30 from './Castle30x30.json';
-//import Chaplin30x30 from './Chaplin30x30.json';
-//import Cobra30x30 from './Cobra30x30.json';
-//import Daffodils30x35 from './Daffodils30x35.json';
-//import Deer30x30 from './Deer30x30.json';
-//import Draw30x30 from './Draw30x30.json';
-//import Elephant30x30 from './Elephant30x30.json';
-//import Elephant30x35 from './Elephant30x35.json';
-//import FancyDress30x30 from './FancyDress30x30.json';
-//import Gorilla30x35 from './Gorilla30x35.json';
-//import Joker30x30 from './Joker30x30.json';
-//import KingKong30x30 from './KingKong30x30.json';
-//import KissHerYuk30x30 from './KissHerYuk30x30.json';
-//import Landscape30x30 from './Landscape30x30.json';
-//import Lovers30x30 from './Lovers30x30.json';
-//import MiniToMaxi30x35 from './MiniToMaxi30x35.json';
-//import NoBite30x30 from './NoBite30x30.json';
-//import Pinapple30x30 from './Pinapple30x30.json';
-//import Poodles30x35 from './Poodles30x35.json';
-//import Posing30x30 from './Posing30x30.json';
-//import Pumpkin30x30 from './Pumpkin30x30.json';
-//import Spartan30x30 from './Spartan30x30.json';
-//import Woman30x30 from './Woman30x30.json';
-//import Lotus35x30 from './Lotus35x30.json';
-//import PirateShip35x35 from './PirateShip35x35.json';
-//import Sparrow35x30 from './Sparrow35x30.json';
-//import SevenSwansSwimming45x35 from './SevenSwansSwimming45x35.json';
-//import TwoTurtleDoves50x35 from './TwoTurtleDoves50x35.json';
+import Castle30x30 from './Castle30x30.json';
+import Chaplin30x30 from './Chaplin30x30.json';
+import Cobra30x30 from './Cobra30x30.json';
+import Daffodils30x35 from './Daffodils30x35.json';
+import Deer30x30 from './Deer30x30.json';
+import Draw30x30 from './Draw30x30.json';
+import Elephant30x30 from './Elephant30x30.json';
+import Elephant30x35 from './Elephant30x35.json';
+import FancyDress30x30 from './FancyDress30x30.json';
+import Gorilla30x35 from './Gorilla30x35.json';
+import Joker30x30 from './Joker30x30.json';
+import KingKong30x30 from './KingKong30x30.json';
+import KissHerYuk30x30 from './KissHerYuk30x30.json';
+import Landscape30x30 from './Landscape30x30.json';
+import Lovers30x30 from './Lovers30x30.json';
+import MiniToMaxi30x35 from './MiniToMaxi30x35.json';
+import NoBite30x30 from './NoBite30x30.json';
+import Pinapple30x30 from './Pinapple30x30.json';
+import Poodles30x35 from './Poodles30x35.json';
+import Posing30x30 from './Posing30x30.json';
+import Pumpkin30x30 from './Pumpkin30x30.json';
+import Spartan30x30 from './Spartan30x30.json';
+import Woman30x30 from './Woman30x30.json';
+import Lotus35x30 from './Lotus35x30.json';
+import PirateShip35x35 from './PirateShip35x35.json';
+import Sparrow35x30 from './Sparrow35x30.json';
+import SevenSwansSwimming45x35 from './SevenSwansSwimming45x35.json';
+import TwoTurtleDoves50x35 from './TwoTurtleDoves50x35.json';
 
 interface Temp {
     xPos: number;
@@ -322,33 +322,33 @@ export const griddlers: GriddlerFile[] = [
     Tea25x25,
     Train25x25,
     UFO25x25,
-    Zen25x25//,
-    //Castle30x30,
-    //Chaplin30x30,
-    //Cobra30x30,
-    //Daffodils30x35,
-    //Deer30x30,
-    //Draw30x30,
-    //Elephant30x30,
-    //Elephant30x35,
-    //FancyDress30x30,
-    //Gorilla30x35,
-    //Joker30x30,
-    //KingKong30x30,
-    //KissHerYuk30x30,
-    //Landscape30x30,
-    //Lovers30x30,
-    //MiniToMaxi30x35,
-    //NoBite30x30,
-    //Pinapple30x30,
-    //Poodles30x35,
-    //Posing30x30,
-    //Pumpkin30x30,
-    //Spartan30x30,
-    //Woman30x30,
-    //Lotus35x30,
-    //PirateShip35x35,
-    //Sparrow35x30,
-    //SevenSwansSwimming45x35,
-    //TwoTurtleDoves50x35
+    Zen25x25,
+    Castle30x30,
+    Chaplin30x30,
+    Cobra30x30,
+    Daffodils30x35,
+    Deer30x30,
+    Draw30x30,
+    Elephant30x30,
+    Elephant30x35,
+    FancyDress30x30,
+    Gorilla30x35,
+    Joker30x30,
+    KingKong30x30,
+    KissHerYuk30x30,
+    Landscape30x30,
+    Lovers30x30,
+    MiniToMaxi30x35,
+    NoBite30x30,
+    Pinapple30x30,
+    Poodles30x35,
+    Posing30x30,
+    Pumpkin30x30,
+    Spartan30x30,
+    Woman30x30,
+    Lotus35x30,
+    PirateShip35x35,
+    Sparrow35x30,
+    SevenSwansSwimming45x35,
+    TwoTurtleDoves50x35
 ];

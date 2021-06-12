@@ -12,6 +12,7 @@ export default class Line {
     private _minItem: number | undefined;
     private _maxItem: number | undefined;
     private _itemsOneValue: boolean | undefined;
+    private _itemsOneColour: boolean | undefined;
     private _itemsUnique: boolean | undefined;
     private _pairLines: Map<number, Line> = new Map();
     private readonly _gaps: IndexMap<Gap>;
@@ -63,6 +64,13 @@ export default class Line {
             this._itemsOneValue = new Set(this.items.map(m => m.value)).size === 1;
 
         return this._itemsOneValue;
+    }
+
+    get itemsOneColour() {
+        if (this._itemsOneColour === undefined)
+            this._itemsOneColour = new Set(this.items.map(m => m.colour)).size === 1;
+
+        return this._itemsOneColour;
     }
 
     get itemsUnique() {
@@ -157,16 +165,18 @@ export default class Line {
                 endPos = block.start;
             else
                 startPos = block.end;
-            range = endPos - startPos - 1;
+            range = endPos - startPos;
         }
 
         for (let i = start; forward ? i < this.lineItems : i >= 0; forward ? i++ : i--) {
-            sum += this.items[i].value;
+            const item = this.items[i];
+            const { value, colour } = item;
+            sum += value;
 
-            while (this.points.get(forward ? startPos + sum : endPos - sum) === this.items[i].colour)
+            while (this.points.get(forward ? startPos + sum : endPos - sum) === colour)
                 sum++;
 
-            if (sum <= range)
+            if (sum < range || (sum === range && (!block || !this.dotBetween(item, block))))
                 shift++;
             else {
                 if (block && sum > gap.size)
@@ -189,9 +199,9 @@ export default class Line {
             iei[1] = false;
 
         if (gap.isFull && (!iei[1] || this.ranOutOfItems(iei[0], forward)
-            || gap.size !== this.items[iei[0]].value)) {
+            || !gap.is(this.items[iei[0]]))) {
             const items = this.filterItems(ei, iei[0]);
-            let uniqueItems = items.filter(f => f.value === gap.size);
+            let uniqueItems = items.filter(f => gap.is(f));
             let itm;
 
             if (uniqueItems.length === 1)
@@ -201,8 +211,8 @@ export default class Line {
                 if (lastGap && lastGap.isFull) {
                     uniqueItems = this.filter(this.pair(), f => {
                         if (lastGap) {
-                            return f[forward ? 0 : 1].value === lastGap.size
-                                && f[forward ? 1 : 0].value === gap.size;
+                            return lastGap.is(f[forward ? 0 : 1])
+                                && gap.is(f[forward ? 1 : 0]);
                         }
                         return false;
                     }).map(m => m[forward ? 1 : 0]);
@@ -213,7 +223,7 @@ export default class Line {
             }
 
             if (!itm)
-                itm = this.find(this.loopItr(items, !forward), f => f.value === gap.size);
+                itm = this.find(this.loopItr(items, !forward), f => gap.is(f));
 
             iei = [itm ? itm.index : -1, uniqueItems.length === 1, 1];
         } else if (!gap.isFull && gap.hasPoints && !iei[1]) {
@@ -221,12 +231,20 @@ export default class Line {
             if (lastBlock) {
                 const toItm = iei[0] + ((forward ? 1 : -1) * (itemShift - 1))
                 const items = this.filterItems(ei, toItm);
-                const uniqueItems = items.filter(f => lastBlock && f.value >= lastBlock.size);
+                const uniqueItems = items.filter(f => lastBlock && lastBlock.canBe(f));
                 if (uniqueItems.length === 1 && uniqueItems[0].index === toItm)
                     iei[1] = true;
             }
         }
 
+        //if (iei[1])
+        //    ei = iei[0] + (forward ? 1 : -1) * itemShift;
+        //else if (gap.hasPoints)
+        //    ei += forward ? 1 : -1;
+
+        //iei[0] += (forward ? 1 : -1) * itemShift;
+
+        //return [iei[0], iei[1], ei] as [number, boolean, number];
         return iei;
     }
 
@@ -489,7 +507,7 @@ export default class Line {
     shouldAddDots(index: number) {
         const start = index > 0 && this.items[index].colour === this.items[index - 1].colour;
         const end = index < this.items.length - 1 && this.items[index].colour === this.items[index + 1].colour;
-        return [start, end];
+        return [start || index === 0, end || index === this.items.length - 1];
     }
 
     dotCount(index: number, forward = true) {

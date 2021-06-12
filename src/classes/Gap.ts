@@ -44,6 +44,11 @@ export default class Gap extends Range {
         this.refreshEndItems();
     }
 
+    is(item: Item) {
+        const block = this._blocks.get('start', this.start)[0];
+        return this.size === item.value && block && block.colour === item.colour;
+    }
+
     canStartWith(item: Item) {
         return !this.startItemsNo.has(item.value);
     }
