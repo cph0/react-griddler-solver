@@ -1,4 +1,5 @@
 import { Action, Block, Line } from "../classes/index";
+import { Item } from "../interfaces";
 import forEachLine from "./forEachLine";
 import { overlapPart } from "./overlapLine";
 
@@ -23,7 +24,9 @@ export default function lineBlocks(lines: Line[]) {
             //no join
             if (!line.dots.has(block.end + 1) && line.points.has(block.end + 2)) {
                 const nextBlock = gap.getBlockAtStart(block.end + 2);
-                if (nextBlock && line.items.every(e => e.value < nextBlock.end - block.start + 1)) {
+                if (nextBlock && block.colour === nextBlock.colour
+                    && line.items.every(e => (e.value > 1 || e.colour === block.colour)
+                        && e.value < nextBlock.end - block.start + 1)) {
                     line.addDot(block.end + 1, Action.NoJoin);
                     blockCount++;
                     continue;
@@ -35,7 +38,7 @@ export default function lineBlocks(lines: Line[]) {
                 && line.points.has(block.end + 2)
                 && !line.some(line.pair(), s => block.canBe(s[0])
                     && s[0].value <= block.end - gap.start + 1
-                    && s[1].value <= gap.end - (block.end + 2) + 1)) {
+                    && s[1].value <= gap.end - (block.end + 1 + line.dotCount(s[0].index)) + 1)) {
                 line.addPoint(block.end + 1, block.colour, Action.MustJoin);
             } else if (equality && equalityE && index + 1 === indexE) {
                 const lastBlock = gap.getLastBlock(block.start - 1);
@@ -70,7 +73,7 @@ export default function lineBlocks(lines: Line[]) {
                         return line.items[iS - 1].value;
                 }
 
-                return line.min(line.itemsInRange(ls, lsEnd), block.size);
+                return line.min(line.itemsInRange(ls, lsEnd), block);
             }
             const mB = minItemBackwards();
             if (gap.end - mB + 1 < block.start)
@@ -83,7 +86,7 @@ export default function lineBlocks(lines: Line[]) {
                     .map(m => m.value));
 
                 if (distinctItems.size === 1)
-                    return line.items.map(m => m.value).find(f => f >= block.size) as number;
+                    return (line.items.find(f => block.canBe(f)) as Item).value;
 
                 if (equality && valid) {
                     const lastBlock = gap.getLastBlock(block.start - 1);
@@ -96,7 +99,7 @@ export default function lineBlocks(lines: Line[]) {
                     }
                 }
 
-                return line.min(line.itemsInRange(ls, lsEnd), block.size);
+                return line.min(line.itemsInRange(ls, lsEnd), block);
             }
             const m = minItemForwards();
             if (gap.start + m - 1 > block.end)
@@ -114,10 +117,6 @@ export default function lineBlocks(lines: Line[]) {
                 else if (equality && equalityE && index === indexE
                     && gap.numberOfBlocks === 1) {
                     singleItem = line.filterItems(index, indexE)[0].value;
-                }
-                else if ((equalityIndex > 0 || index < line.lineItems - 1)
-                    && line.min(line.filterItems(equalityIndex, index)) >= block.start - gap.start) {
-                    singleItem = line.max(line.filterItems(equalityIndex, index));
                 }
                 else {
                     const items = line.filter(line.itemsInRange(ls), f => block.canBe(f));
@@ -141,10 +140,6 @@ export default function lineBlocks(lines: Line[]) {
                     || blockCount === line.lineItems - 1 || !gap.getNextBlock(block.end + 1))) {
                     singleItem = line.items[blockCount].value;
                 }
-                else if ((indexE > 0 || equalityIndexE < line.lineItems - 1)
-                    && line.min(line.filterItems(indexE, equalityIndexE)) >= gap.end - block.end) {
-                    singleItem = line.max(line.filterItems(indexE, equalityIndexE));
-                }
                 else {
                     const items = line.filter(line.itemsInRange(lsEnd), f => block.canBe(f));
                     if (items.length === 1 && items[0].index === equalityIndexE)
@@ -157,37 +152,47 @@ export default function lineBlocks(lines: Line[]) {
             if (sie && block.start + sie <= gap.end)
                 line.addDots(block.start + sie, gap.end, Action.ItemForwardReach);
 
-            //sum dot forward - for little20x20 breaks boy25x25 
-            if (valid && false && indexAtBlock - 1 >= 0 && indexAtBlock - 1 <= line.lineItems - 1
-                && line.filterItems(equalityIndex, indexAtBlock - 1)
-                .every(e => e.value === block.size)
-                && gap.start + line.sum(true, line.filterItems(index, indexAtBlock - 1)) - 1
-                === block.start - 1 - line.dotCount(indexAtBlock - 1)) {
-                line.addDot(block.start - 1, Action.SumDotForward);
+            //sum dot forward - for little20x20 breaks joker30x30
+            //if (valid && indexAtBlock - 1 >= 0 && indexAtBlock - 1 <= line.lineItems - 1
+            //    && line.filterItems(equalityIndex, indexAtBlock - 1)
+            //        .every(e => block.is(e))
+            //    && gap.start + line.sum(true, line.filterItems(index, indexAtBlock - 1)) - 1
+            //    === block.start - 1 - line.dotCount(indexAtBlock - 1)) {
+            //    line.addDot(block.start - 1, Action.SumDotForward);
 
-                if (block.start - 1 > gap.start) {
-                    blockCount--;
-                    continue;
-                }
-                else
-                    skip.i = block.end;
-            }
+            //    if (block.start - 1 > gap.start) {
+            //        blockCount--;
+            //        continue;
+            //    }
+            //    else
+            //        skip.i = block.end;
+            //}
 
             //half gap overlap backwards
-            const uniqueItems = line.itemsInRange(ls, lsEnd).filter(f => f.value >= block.size);
+            const uniqueItems = line.itemsInRange(ls, lsEnd).filter(f => block.canBe(f));
             if (uniqueItems.length === 1 && uniqueItems[0].index > index) {
                 const sum = line.sum(true, line.filterItems(index, uniqueItems[0].index - 1));
-                const space = block.start - gap.start - 1 - line.dotCount(uniqueItems[0].index, false);//line.spaceBetween(,); 
+                const dotCount = line.dotCount(uniqueItems[0].index, false);
+                const space = block.start - gap.start - 1 - dotCount;//line.spaceBetween(,); 
                 if (sum <= space && sum > space / 2)
-                    overlapPart(line, gap.start, block.start - 2, index, uniqueItems[0].index - 1, Action.HalfGapOverlap);
+                    overlapPart(line, gap.start, block.start - 1 - dotCount, index, uniqueItems[0].index - 1, Action.HalfGapOverlap);
             }
+
+            //half gap overlap forwards
+            //if (uniqueItems.length === 1 && uniqueItems[0].index < indexE) {
+            //    const sum = line.sum(true, line.filterItems(uniqueItems[0].index, indexE));
+            //    const dotCount = line.dotCount(uniqueItems[0].index);
+            //    const space = gap.end - (block.end + dotCount);
+            //    if (sum <= space && sum > space / 2)
+            //        overlapPart(line, block.end + 1 + dotCount, gap.end, uniqueItems[0].index, indexE, Action.HalfGapOverlap);
+            //}
 
             //isolated items reach
             if (lineIsolated && gap.numberOfBlocks > 1
                 && blockCount < line.lineItems - 1) {
                 const nextItem = line.items[blockCount + 1];
                 const start = block.start + line.items[blockCount].value;
-                const nextBlock = gap.getNextBlock(start);
+                const nextBlock = gap.getNextBlock(block.end + 1);
 
                 if (nextBlock)
                     line.addDots(start, nextBlock.end - nextItem.value, Action.IsolatedItemsReach);

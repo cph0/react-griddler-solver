@@ -16,15 +16,15 @@ export default function completeItem(lines: Line[]) {
                     && line.items[blockCount].value === block.size) {
                     return line.shouldAddDots(blockCount);
                 }
-                else if (line.itemsInRange(ls).every(e => e.value <= block.size))
+                else if (line.itemsInRange(ls).every(e => block.isOrCantBe(e)))
                     return [lineOneColour, lineOneColour];
 
                 const lastBlock = gap.getLastBlock(block.start - 1);
                 if (lastBlock) {
                     const items = line.itemsInRange(ls);
-                    const lastItem = items.find(f => f.value >= lastBlock.size);
+                    const lastItem = items.find(f => lastBlock.canBe(f));
                     if (lastItem && items.every(e => line.isolatedPart(e.index, block, lastBlock))
-                        && !line.some(items.filter(f => f.index > lastItem.index), f => f.value > block.size)                    )
+                        && line.every(items.filter(f => f.index > lastItem.index), f => block.isOrCantBe(f))                    )
                         return [lineOneColour, lineOneColour];
                 }
 
@@ -33,9 +33,9 @@ export default function completeItem(lines: Line[]) {
 
                 if (lastBlock) {
                     const itemsInRange = line.filterItems(equalityIndex, equalityIndexE);
-                    if (itemsInRange.some(s => s.value === block.size)
+                    if (itemsInRange.some(s => block.is(s))
                         && !itemsInRange.some(s => line.fitsInSpace(lastBlock, block, s)) //relax this!
-                        && !line.some(line.pair(itemsInRange), f => f[0].value >= lastBlock.size && f[1].value > block.size)
+                        && !line.some(line.pair(itemsInRange), f => lastBlock.canBe(f[0]) && f[1].value > block.size)
                         && itemsInRange.every(e => line.isolatedPart(e.index, block, lastBlock)))
                         return [lineOneColour, lineOneColour];
                 }
@@ -43,34 +43,35 @@ export default function completeItem(lines: Line[]) {
                 const nextBlock = gap.getNextBlock(block.end + 1);
                 if (nextBlock) {
                     const items = line.itemsInRange(lsEnd);
-                    const lastItem = line.find(line.loopItr(items, false), f => f.value >= nextBlock.size);
+                    const lastItem = line.find(line.loopItr(items, false), f => nextBlock.canBe(f));
                     if (lastItem && items.every(e => line.isolatedPart(e.index, block, nextBlock, false))
-                        && !line.some(items.filter(f => f.index < lastItem.index), f => f.value > block.size))
+                        && line.every(items.filter(f => f.index < lastItem.index), f => block.isOrCantBe(f)))
                         return [lineOneColour, lineOneColour];
                 }
 
                 if (nextBlock) {
-                    const nextItem = line.filter(line.items, f => f.value >= nextBlock.size);
+                    const nextItem = line.filter(line.items, f => nextBlock.canBe(f));
                     const endIndex = nextItem.length === 1 ? nextItem[0].index : equalityIndexE;
                     const itemsInRange = line.filterItems(equalityIndex, endIndex - 1);
-                    if (itemsInRange.every(e => e.value === block.size)
+                    if (itemsInRange.every(e => block.isOrCantBe(e))
                         && line.isolatedPart(endIndex, block, nextBlock, false))
                         return [lineOneColour, lineOneColour];
                 }
 
-                if (line.itemsInRange(ls, lsEnd).every(e => e.value <= block.size))
+                if (line.itemsInRange(ls, lsEnd).every(e => block.isOrCantBe(e)))
                     return [lineOneColour, lineOneColour];
             }
 
             const compItm = compItem();
             if (compItm) {
-                if (block.start - 1 > gap.start)
-                    blockCount--;
-                else
-                    skip.i = block.end;
+                if (compItm[0]) {
+                    if (block.start - 1 > gap.start)
+                        blockCount--;
+                    else
+                        skip.i = block.end;
 
-                if (compItm[0])
                     line.addDot(block.start - 1, Action.CompleteItem);
+                }
 
                 if (compItm[1])
                     line.addDot(block.end + 1, Action.CompleteItem);
