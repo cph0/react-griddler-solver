@@ -134,33 +134,13 @@ export default class Line {
         return forward ? item >= this.lineItems : item < 0;
     }
 
-    sumWhileO(start: number, startPos: number, endPos: number, forward = true) {
-        let [sum, shift] = [0, 0];
-
-        for (let i = start; forward ? i < this.lineItems : i >= 0; forward ? i++ : i--) {
-            sum += this.items[i].value;
-
-            while (this.points.get(forward ? startPos + sum : endPos - sum) === this.items[i].colour)
-                sum++;
-
-            if (sum <= endPos - startPos + 1)
-                shift++;
-            else
-                break;
-
-            sum += this.dotCount(i, forward);
-        }
-
-        return shift;
-    }
-
     sumWhile(start: number, gap: Gap, block?: Block, forward = true) {
         let [sum, shift] = [0, 0];
         let startPos = gap.start;
         let endPos = gap.end;
         let range = gap.size;
 
-        if (block && forward) {
+        if (block) {
             if (forward)
                 endPos = block.start;
             else
@@ -194,6 +174,7 @@ export default class Line {
     private adjustItemIndexes(gap: Gap, ei: number, ie: [number, boolean], forward = true) {
         const itemShift = this.sumWhile(ie[0], gap, undefined, forward);
         let iei = [...ie, itemShift] as [number, boolean, number];
+
 
         if (!gap.isFull && (iei[2] > 1 || (iei[2] === 1 && !gap.hasPoints)))
             iei[1] = false;
@@ -254,7 +235,7 @@ export default class Line {
         }
     }
 
-    unique<T>(itr: Generator<T, void, unknown> | Array<T>, func: (f: T) => boolean) {
+    unique<T>(itr: Generator<T, void, unknown> | T[], func: (f: T) => boolean) {
         let count = 0;
         for (const value of itr) {
             if (func(value)) {
@@ -267,7 +248,7 @@ export default class Line {
         return true;
     }
 
-    filter<T>(itr: Generator<T, void, unknown> | Array<T>, func: (f: T) => boolean) {
+    filter<T>(itr: Generator<T, void, unknown> | T[], func: (f: T) => boolean) {
         const items = [];
 
         for (const value of itr) {
@@ -278,15 +259,24 @@ export default class Line {
         return items;
     }
 
-    find<T>(itr: Generator<T, void, unknown> | Array<T>, func: (f: T) => boolean) {
+    find<T>(itr: Generator<T, void, unknown> | T[], func: (f: T) => boolean) {
         for (const value of itr) {
             if (func(value))
                 return value;
         }
     }
 
-    some<T>(itr: Generator<T, void, unknown> | Array<T>, func: (f: T) => boolean) {
+    some<T>(itr: Generator<T, void, unknown> | T[], func: (f: T) => boolean) {
         return !!this.find(itr, func);
+    }
+
+    every<T>(itr: Generator<T, void, unknown> | T[], func: (f: T) => boolean) {        
+        for (const value of itr) {
+            if (!func(value))
+                return false;
+        }
+
+        return true;
     }
 
     *pair(arr = this.items) {
@@ -317,6 +307,8 @@ export default class Line {
                     let itemShift = 0;
                     [item, equality, itemShift]
                         = this.adjustItemIndexes(gap, equalityItem, [item, equality]);
+
+
 
                     if (equality)
                         equalityItem = item + itemShift;
@@ -392,7 +384,7 @@ export default class Line {
         const lsEnd = new LineSegment(theItem, item, equalityItem);
 
         if (block)
-            lsEnd.indexAtBlock = item - this.sumWhileO(item, block.end + 2, currentGap.end, false);
+            lsEnd.indexAtBlock = item - this.sumWhile(item, currentGap, block, false);
 
         return lsEnd;
     }
@@ -478,9 +470,9 @@ export default class Line {
         }
     }
 
-    min(arr = this.items, min = 1) {
+    min(arr = this.items, block: Block | undefined = undefined) {
         return arr.reduce((acc, item) => {
-            if (item.value >= min && (!acc || item.value < acc))
+            if ((!block || block.canBe(item)) && (!acc || item.value < acc))
                 return item.value;
             return acc;
         }, 0);
@@ -495,8 +487,8 @@ export default class Line {
     }
 
     sum(includeDots = true, arr = this.items) {
-        return arr.reduce((acc, item, index) => {
-            return acc + item.value + (includeDots && index < arr.length - 1 ? this.dotCount(index) : 0);
+        return arr.reduce((acc, { value, index }) => {
+            return acc + value + (includeDots && index < arr.length - 1 ? this.dotCount(index) : 0);
         }, 0);
     }
 

@@ -18,4 +18,6 @@ export default class Block extends Range implements Colour {
     canBe(item: Item) {
         return this.size <= item.value && this.colour === item.colour;
     }
+
+    isOrCantBe = (item: Item) => this.is(item) || !this.canBe(item);
 }
