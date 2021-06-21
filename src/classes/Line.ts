@@ -5,6 +5,7 @@ import Block from './Block';
 import Gap from './Gap';
 import LineSegment from './LineSegment';
 import { Action } from './Path';
+import Range from './Range';
 
 export default class Line {
     private readonly _lineIndex: number;
@@ -175,7 +176,6 @@ export default class Line {
         const itemShift = this.sumWhile(ie[0], gap, undefined, forward);
         let iei = [...ie, itemShift] as [number, boolean, number];
 
-
         if (!gap.isFull && (iei[2] > 1 || (iei[2] === 1 && !gap.hasPoints)))
             iei[1] = false;
 
@@ -191,11 +191,8 @@ export default class Line {
                 const lastGap = this.findGapAtPos(gap.start + (forward ? -1 : 1), !forward);
                 if (lastGap && lastGap.isFull) {
                     uniqueItems = this.filter(this.pair(), f => {
-                        if (lastGap) {
-                            return lastGap.is(f[forward ? 0 : 1])
-                                && gap.is(f[forward ? 1 : 0]);
-                        }
-                        return false;
+                        return lastGap.is(f[forward ? 0 : 1])
+                            && gap.is(f[forward ? 1 : 0]);
                     }).map(m => m[forward ? 1 : 0]);
 
                     if (uniqueItems.length === 1)
@@ -270,7 +267,7 @@ export default class Line {
         return !!this.find(itr, func);
     }
 
-    every<T>(itr: Generator<T, void, unknown> | T[], func: (f: T) => boolean) {        
+    every<T>(itr: Generator<T, void, unknown> | T[], func: (f: T) => boolean) {
         for (const value of itr) {
             if (!func(value))
                 return false;
@@ -357,6 +354,7 @@ export default class Line {
     *getBlocks(includeItems = false) {
         for (const gap of this.getGaps(includeItems)) {
             for (const block of gap[0].getBlocks()) {
+                gap[1].indexAtBlock = gap[1].index;
                 gap[1].indexAtBlock += this.sumWhile(gap[1].index, gap[0], block);
                 yield [block, ...gap] as [Block, Gap, LineSegment, { i: number }];
             }
@@ -487,8 +485,8 @@ export default class Line {
     }
 
     sum(includeDots = true, arr = this.items) {
-        return arr.reduce((acc, { value, index }) => {
-            return acc + value + (includeDots && index < arr.length - 1 ? this.dotCount(index) : 0);
+        return arr.reduce((acc, { value, index }, arrIndex) => {
+            return acc + value + (includeDots && arrIndex < arr.length - 1 ? this.dotCount(index) : 0);
         }, 0);
     }
 
@@ -510,24 +508,46 @@ export default class Line {
         return first.colour === second.colour ? 1 : 0;
     }
 
-    spaceBetween(block: Block, nextBlock: Block, item: Item) {
-        const diff = 1 + this.dotBetween(block, item)
-            + this.dotBetween(nextBlock, item);
-        return nextBlock.start - block.end - diff;
+    spaceBetween(block: Block | Gap, nextBlock: Block | Gap, item: Item) {
+        let end = nextBlock.start;
+        let start = block.end;
+        let leftDotCount = 0;
+        let rightDotCount = 0
+
+        if (block instanceof Block)
+            leftDotCount = this.dotBetween(block, item);
+        else
+            start = block.start - 1;
+
+        if (nextBlock instanceof Block)
+            rightDotCount = this.dotBetween(nextBlock, item);
+        else
+            end = nextBlock.end + 1;
+
+        return [end - start - 1 - leftDotCount - rightDotCount, leftDotCount, rightDotCount];
     }
 
-    fitsInSpace(block: Block, nextBlock: Block, item: Item) {
-        return item.value <= this.spaceBetween(block, nextBlock, item);
+    fitsInSpace(block: Block | Gap, nextBlock: Block | Gap, item: Item | number) {
+        item = typeof item === 'number' ? this.items[item] : item;
+        return item.value <= this.spaceBetween(block, nextBlock, item)[0];
     }
 
     isLineIsolated() {
         let isIsolated = true;
+        const blockIndexes = new Map<number, Block>();
+        const isolations = new Set<number>();
+        const isolatedItems = new Map<number, number>();
+        const pushes = new Map<number, number>();
+        const canJoin = new Map<number, boolean>();
         let lastBlock: Block | undefined;
         let blockCount = 0;
+        let startItem = 0;
         let currentItem = 0;
         let reachIndex = 0;
 
         for (const [block] of this.getBlocks()) {
+
+            blockIndexes.set(blockCount, block);
 
             if (lastBlock && currentItem < this.lineItems) {
                 const reachIndexCurrent = lastBlock.start + this.items[currentItem].value - 1;
@@ -537,8 +557,56 @@ export default class Line {
 
                 //previous reach current
                 if (block.end <= reachIndexCurrent) {
+                    isolations.add(blockCount);
+                    canJoin.set(blockCount - 1, false);
+                    canJoin.set(blockCount, false);
+                    pushes.set(blockCount, currentItem + 1);
                     isIsolated = false;
-                    break;
+                }
+                else if (currentItem === this.lineItems - 1) {
+                    //does not reach and no more items
+                    isolations.delete(blockCount);
+                    if (pushes.has(blockCount - 2))
+                        isolations.delete(blockCount - 2);
+
+                    if (pushes.size === 1) {
+
+                        let flag = true;
+                        for (let i = blockCount - 1; i >= 0; i--) {
+                            const first = blockIndexes.get(i);
+                            const second = blockIndexes.get(i + 1);
+                            const itemIndex = currentItem - (blockCount - i);
+
+                            if (itemIndex === -1) {
+                                flag = false;
+                                break;
+                            }
+
+                            if (first && second) {
+                                if (first.start + this.items[itemIndex].value - 1 >= second.end
+                                    || second.end - this.items[itemIndex + 1].value + 1 <= first.start) {
+                                    flag = false;
+                                    break;
+                                }
+                                else if (pushes.has(i)) {
+                                    // at pushed (First), item does not reach Second
+                                    //---{P:end}.{F != Item}.{S:start}---
+                                    //Item is too big to fit between Previous and Second
+                                    //Therefore Previous and First Join as ONLY ONE PUSH
+                                    canJoin.set(i - 1, true);
+                                    canJoin.set(i, true);
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (flag) {
+                            let itmIdx = 0;
+                            for (let i = 0; i <= blockCount; i++)
+                                isolatedItems.set(i, pushes.has(i) ? itmIdx - 1 : itmIdx++);
+                            break;
+                        }
+                    }
                 }
 
                 currentItem++;
@@ -548,19 +616,44 @@ export default class Line {
 
                     //current reach previous
                     if (backReach <= lastBlock.start) {
+
+                        for (let i = blockCount - 1; i >= 0; i--) {
+                            isolations.add(i);
+                        }
+
+                        pushes.set(1, 1);
+                        pushes.set(2, 2);
                         isIsolated = false;
-                        break;
                     }
                 }
             }
 
             blockCount++;
             lastBlock = block;
+
+            //start - skip to correct solid count
+            if (blockCount === 1 && !block.canBe(this.items[currentItem])) {
+                const itm = this.find(this.items, f => block.canBe(f));
+                if (!itm)
+                    console.error('No start item for isolations!');
+                currentItem = itm ? itm.index : currentItem;
+                startItem = currentItem;
+            }
+            //else if (blockCount === 1 && block.item && block.item > 0) {
+            //    currentItem = block.item;
+            //    startItem = currentItem;
+            //}
         }
 
-        if (blockCount !== this.lineItems)
+        //not working - possibly as block count changes while iterating
+        //if (isIsolated && isolatedItems.size === 0 && startItem === 1
+        //    && blockCount === 2 && this.lineItems === 3) {
+        //    for (let i = 0; i < blockCount; i++)
+        //        isolatedItems.set(i, i + startItem);
+        //}
+        if (blockCount !== this.lineItems || startItem > 0)
             isIsolated = false;
 
-        return isIsolated;
+        return [isIsolated, isolatedItems] as [boolean, Map<number, number>];
     }
 }

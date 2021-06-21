@@ -3,18 +3,24 @@ import forEachLine from "./forEachLine";
 
 export default function completeItem(lines: Line[]) {
     for (const line of forEachLine(lines)) {
-        const isLineIsolated = line.isLineIsolated();
+        const [isLineIsolated, isolatedItems] = line.isLineIsolated();
         const lineOneColour = line.itemsOneColour;
         let blockCount = 0;
 
         for (const [block, gap, ls, skip] of line.getBlocks(true)) {
             const { equalityIndex } = ls;
+            const isolatedItem = isolatedItems.get(blockCount);
+
             const compItem = () => {
                 if (line.maxItem === block.size)
                     return [lineOneColour, lineOneColour];
                 else if (isLineIsolated && blockCount < line.lineItems
                     && line.items[blockCount].value === block.size) {
                     return line.shouldAddDots(blockCount);
+                }
+                else if (isolatedItem && isolatedItem < line.lineItems
+                    && line.items[isolatedItem].value === block.size) {
+                    return line.shouldAddDots(isolatedItem);
                 }
                 else if (line.itemsInRange(ls).every(e => block.isOrCantBe(e)))
                     return [lineOneColour, lineOneColour];
@@ -23,8 +29,9 @@ export default function completeItem(lines: Line[]) {
                 if (lastBlock) {
                     const items = line.itemsInRange(ls);
                     const lastItem = items.find(f => lastBlock.canBe(f));
+
                     if (lastItem && items.every(e => line.isolatedPart(e.index, block, lastBlock))
-                        && line.every(items.filter(f => f.index > lastItem.index), f => block.isOrCantBe(f))                    )
+                        && line.every(items.filter(f => f.index > lastItem.index), f => block.isOrCantBe(f)))
                         return [lineOneColour, lineOneColour];
                 }
 

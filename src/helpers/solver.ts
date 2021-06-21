@@ -81,7 +81,7 @@ export default function solve(rs: Item[][], cs: Item[][]) {
         lineBlocks(rows);
         lineBlocks(cols);
 
-        //if (count === 0)
+        //if (count === 1)
         //    break;
 
         count++;
