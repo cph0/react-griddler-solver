@@ -100,15 +100,20 @@ export enum Action {
     */
     SumDotForward = 20,
     /**
+     * ...,3,1,1,3//-0----.000.|// to -0.---.000.|
+     * All items after equal solid count and sum fits exactly
+    */
+    SumDotBackward = 21,
+    /**
      *  1,2,3|0.----.000| to |0.0---.000|
      *  Try a point at the first possible position
     */
-    TrialAndError = 21,
+    TrialAndError = 22,
     /**
      *  Restrict where items of a certain colour can go by looking at
         the perpendicular lines and their appropriate items.
     */
-    ColourCrossReference = 22
+    ColourCrossReference = 23
 }
 
 export default class Path {
