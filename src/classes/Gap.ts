@@ -28,11 +28,6 @@ export default class Gap extends Range {
         return this._blocks.size > 0;
     }
 
-    get isFull() {
-        const firstBlock = this._blocks.get('start', this.start)[0];
-        return firstBlock && firstBlock.end === this.end;
-    }
-
     constructor(start: number, end: number, blocks?: Block[]) {
         super(start, end);
         this._nextEmpty = start;
@@ -42,6 +37,12 @@ export default class Gap extends Range {
         this.startItemsNo = new Set();
         this.refreshStartItems();
         this.refreshEndItems();
+    }
+
+    isFull(oneBlock = true) {
+        return Array.from(this._blocks.values())
+            .reduce((acc, f) => acc + f.size, 0) === this.size
+            && (!oneBlock || this.numberOfBlocks === 1);
     }
 
     is(item: Item) {

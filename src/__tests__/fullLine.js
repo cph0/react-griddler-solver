@@ -1,8 +1,5 @@
-import 'regenerator-runtime/runtime';
-import { Line } from '../classes';
-//import { renderHook } from '@testing-library/react-hooks'
+import { createLines } from '../helpers/solver';
 import { fullLine, overlapLine } from '../helpers/index';
-import { Item } from '../interfaces';
 
 function createData() {
     const data = {
@@ -29,29 +26,15 @@ function createData() {
         grid: null
     };
 
-    const rows: Line[] = [];
-    const cols: Line[] = [];
-
-    data.rows.forEach((f, i) => {
-        const items: Item[] = f.map((value, index) => ({ index, value, colour: "black" }));
-        const line = new Line(8, i, items);
-        rows.push(line);
-    })
-
-    data.cols.forEach((f, i) => {
-        const items: Item[] = f.map((value, index) => ({ index, value, colour: "black" }));
-        const line = new Line(8, i, items);
-        cols.push(line);
-    })
-
-    rows.forEach(f => {
-        f.setPairLines(cols);
+    const rowItems = data.rows.map(r => {
+        return r.map((value, index) => ({ index, value, colour: 'black' }));
     });
 
-    cols.forEach(f => {
-        f.setPairLines(rows);
+    const colItems = data.cols.map(r => {
+        return r.map((value, index) => ({ index, value, colour: 'black' }));
     });
 
+    const { rows, cols } = createLines(rowItems, colItems);
     return [rows, cols];
 }
 

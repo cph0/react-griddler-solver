@@ -26,6 +26,7 @@ export default class LineSegment {
         if (gapOnly)
             return [Math.min(this.index, ls.index), Math.max(this.index, ls.index)];
         else
-            return [this.equalityIndex, ls.equalityIndex];
+            return [Math.max(this.equalityIndex, ls.indexAtBlock),
+            Math.min(this.indexAtBlock, ls.equalityIndex)];
     }
 }

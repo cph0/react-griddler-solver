@@ -1,8 +1,8 @@
 import 'regenerator-runtime/runtime';
-import { GriddlerFile, griddlers } from '../data';
+import { griddlers } from '../data';
 import solve from '../helpers/solver';
 
-function solveGriddler(griddler: GriddlerFile) {
+function solveGriddler(griddler) {
     const rows = griddler.rows.map(f => {
         return f.map((value, index) => {
             const parts = value.toString().split('.');
@@ -28,9 +28,9 @@ function solveGriddler(griddler: GriddlerFile) {
     return solve(rows, cols);
 }
 
-function testGriddler(griddler: GriddlerFile) {
-    const points: Map<string, string> = new Map(griddler.points.map(m => [`${m.yPos}_${m.xPos}`, m.colour]));
-    const dots: Set<string> = new Set();
+function testGriddler(griddler) {
+    const points = new Map(griddler.points.map(m => [`${m.yPos}_${m.xPos}`, m.colour]));
+    const dots = new Set();
 
     const { points: pts, dots: dts } = solveGriddler(griddler);
 
@@ -41,7 +41,7 @@ function testGriddler(griddler: GriddlerFile) {
         }
     }
 
-    const pointsOut = pts.map(m => [`${m.y}_${m.x}`, m.colour] as [string, string]);
+    const pointsOut = pts.map(m => [`${m.y}_${m.x}`, m.colour]);
     const dotsOut = dts.map(m => `${m.y}_${m.x}`);
     const pointsCorrect = pointsOut.length === points.size
         && !pointsOut.some(o => !points.has(o[0]) || points.get(o[0]) !== o[1]);
@@ -50,6 +50,7 @@ function testGriddler(griddler: GriddlerFile) {
 
     return [pointsCorrect, dotsCorrect];
 }
+
 
 describe("data", () => {
     test.each(griddlers)('multi', (griddler) => {

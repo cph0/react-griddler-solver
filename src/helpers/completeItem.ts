@@ -5,18 +5,16 @@ export default function completeItem(lines: Line[]) {
     for (const line of forEachLine(lines)) {
         const [isLineIsolated, isolatedItems] = line.isLineIsolated();
         const lineOneColour = line.itemsOneColour;
-        let blockCount = 0;
-
         for (const [block, gap, ls, skip] of line.getBlocks(true)) {
             const { equalityIndex } = ls;
-            const isolatedItem = isolatedItems.get(blockCount);
+            const isolatedItem = isolatedItems.get(skip.blockCount);
 
             const compItem = () => {
                 if (line.maxItem === block.size)
                     return [lineOneColour, lineOneColour];
-                else if (isLineIsolated && blockCount < line.lineItems
-                    && line.items[blockCount].value === block.size) {
-                    return line.shouldAddDots(blockCount);
+                else if (isLineIsolated && skip.blockCount < line.lineItems
+                    && line.items[skip.blockCount].value === block.size) {
+                    return line.shouldAddDots(skip.blockCount);
                 }
                 else if (isolatedItem && isolatedItem < line.lineItems
                     && line.items[isolatedItem].value === block.size) {
@@ -42,7 +40,8 @@ export default function completeItem(lines: Line[]) {
                     const itemsInRange = line.filterItems(equalityIndex, equalityIndexE);
                     if (itemsInRange.some(s => block.is(s))
                         && !itemsInRange.some(s => line.fitsInSpace(lastBlock, block, s)) //relax this!
-                        && !line.some(line.pair(itemsInRange), f => lastBlock.canBe(f[0]) && f[1].value > block.size)
+                        && !line.some(line.pair(itemsInRange), f => lastBlock.canBe(f[0])
+                            && f[1].value > block.size)
                         && itemsInRange.every(e => line.isolatedPart(e.index, block, lastBlock)))
                         return [lineOneColour, lineOneColour];
                 }
@@ -73,7 +72,7 @@ export default function completeItem(lines: Line[]) {
             if (compItm) {
                 if (compItm[0]) {
                     if (block.start - 1 > gap.start)
-                        blockCount--;
+                        skip.blockCount--;
                     else
                         skip.i = block.end;
 
@@ -83,8 +82,6 @@ export default function completeItem(lines: Line[]) {
                 if (compItm[1])
                     line.addDot(block.end + 1, Action.CompleteItem);
             }
-
-            blockCount++;
         }
     }
 }
