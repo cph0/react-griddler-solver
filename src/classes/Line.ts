@@ -5,7 +5,13 @@ import Block from './Block';
 import Gap from './Gap';
 import LineSegment from './LineSegment';
 import { Action } from './Path';
-import Range from './Range';
+
+export interface Skip {
+    i: number;
+    blockCount: number;
+    lastGap?: Gap;
+    lastBlock?: Block;
+}
 
 export default class Line {
     private readonly _lineIndex: number;
@@ -22,7 +28,10 @@ export default class Line {
     public readonly lineLength: number;
     public readonly points: Map<number, string> = new Map();
     public readonly dots: Set<number> = new Set();
-    public complete = false;
+
+    get complete() {
+        return this.points.size + this.dots.size === this.lineLength;
+    }
 
     get lineItems() {
         return this.items.length;
@@ -176,10 +185,10 @@ export default class Line {
         const itemShift = this.sumWhile(ie[0], gap, undefined, forward);
         let iei = [...ie, itemShift] as [number, boolean, number];
 
-        if (!gap.isFull && (iei[2] > 1 || (iei[2] === 1 && !gap.hasPoints)))
+        if (!gap.isFull(false) && (iei[2] > 1 || (iei[2] === 1 && !gap.hasPoints)))
             iei[1] = false;
 
-        if (gap.isFull && (!iei[1] || this.ranOutOfItems(iei[0], forward)
+        if (gap.isFull() && (!iei[1] || this.ranOutOfItems(iei[0], forward)
             || !gap.is(this.items[iei[0]]))) {
             const items = this.filterItems(ei, iei[0]);
             let uniqueItems = items.filter(f => gap.is(f));
@@ -189,7 +198,7 @@ export default class Line {
                 itm = uniqueItems[0];
             else {
                 const lastGap = this.findGapAtPos(gap.start + (forward ? -1 : 1), !forward);
-                if (lastGap && lastGap.isFull) {
+                if (lastGap && lastGap.isFull()) {
                     uniqueItems = this.filter(this.pair(), f => {
                         return lastGap.is(f[forward ? 0 : 1])
                             && gap.is(f[forward ? 1 : 0]);
@@ -204,7 +213,7 @@ export default class Line {
                 itm = this.find(this.loopItr(items, !forward), f => gap.is(f));
 
             iei = [itm ? itm.index : -1, uniqueItems.length === 1, 1];
-        } else if (!gap.isFull && gap.hasPoints && !iei[1]) {
+        } else if (!gap.isFull() && gap.hasPoints && !iei[1]) {
             const lastBlock = gap.getLastBlock(gap.end);
             if (lastBlock) {
                 const toItm = iei[0] + ((forward ? 1 : -1) * (itemShift - 1))
@@ -288,7 +297,7 @@ export default class Line {
 
     *getGaps(includeItems = false) {
         let [item, equalityItem, equality] = [0, 0, true];
-        const skip = { i: 0 };
+        const skip: Skip = { i: 0, blockCount: 0 };
 
         for (skip.i = 0; skip.i < this.lineLength; skip.i++) {
             const gap = this._gaps.get('start', skip.i)[0];
@@ -297,15 +306,13 @@ export default class Line {
 
                 const theItem = item < this.lineItems ? this.items[item] : null;
                 const ls = new LineSegment(theItem, item, equalityItem);
-                yield [gap, ls, skip] as [Gap, LineSegment, { i: number; b: boolean }];
+                yield [gap, ls, skip] as [Gap, LineSegment, Skip];
 
                 if (includeItems) {
 
                     let itemShift = 0;
                     [item, equality, itemShift]
                         = this.adjustItemIndexes(gap, equalityItem, [item, equality]);
-
-
 
                     if (equality)
                         equalityItem = item + itemShift;
@@ -314,6 +321,8 @@ export default class Line {
 
                     item += itemShift;
                 }
+
+                skip.lastGap = gap;
             }
         }
     }
@@ -356,7 +365,9 @@ export default class Line {
             for (const block of gap[0].getBlocks()) {
                 gap[1].indexAtBlock = gap[1].index;
                 gap[1].indexAtBlock += this.sumWhile(gap[1].index, gap[0], block);
-                yield [block, ...gap] as [Block, Gap, LineSegment, { i: number }];
+                yield [block, ...gap] as [Block, Gap, LineSegment, Skip];
+                gap[2].blockCount++;
+                gap[2].lastBlock = block;
             }
         }
     }
@@ -639,18 +650,15 @@ export default class Line {
                 currentItem = itm ? itm.index : currentItem;
                 startItem = currentItem;
             }
-            //else if (blockCount === 1 && block.item && block.item > 0) {
-            //    currentItem = block.item;
-            //    startItem = currentItem;
-            //}
         }
 
         //not working - possibly as block count changes while iterating
-        //if (isIsolated && isolatedItems.size === 0 && startItem === 1
-        //    && blockCount === 2 && this.lineItems === 3) {
+        //if (isIsolated && isolatedItems.size === 0 && startItem > 0
+        //    && blockCount === this.lineItems - startItem) {
         //    for (let i = 0; i < blockCount; i++)
         //        isolatedItems.set(i, i + startItem);
         //}
+
         if (blockCount !== this.lineItems || startItem > 0)
             isIsolated = false;
 

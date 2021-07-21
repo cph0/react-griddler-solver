@@ -1,5 +1,5 @@
 module.exports = {
-    preset: 'ts-jest',
+    preset: 'ts-jest/presets/js-with-babel',
     testEnvironment: 'jsdom',
     transformIgnorePatterns: [
         '/node_modules/(?!ts-index-map).+\\.js$'

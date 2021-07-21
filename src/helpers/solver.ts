@@ -6,22 +6,10 @@ import {
 } from './index';
 
 export function isComplete(lines: Line[]) {
-    let complete = true;
-
-    for (const line of lines) {
-
-        if (line.linePointsValue(true) !== line.lineLength) {
-            complete = false;
-            break;
-        }
-        else
-            line.complete = true;
-    }
-
-    return complete;
+    return lines.every(e => e.complete);
 }
 
-function createLines(rows: Item[][], cols: Item[][]) {
+export function createLines(rows: Item[][], cols: Item[][]) {
     const rs: Line[] = [];
     const cs: Line[] = [];
 

@@ -11,9 +11,6 @@ const itemFillsGap = (g: Gap, e: B, i: Item | null) => e && g.hasPoints && i && 
 const itemAtEdgeOfGap = (a: B, e: B, l: Line, i: Item | null) => i && a && (e || l.itemsOneValue);
 export default function lineGaps(lines: Line[]) {
     for (const line of forEachLine(lines)) {
-        let lastGap: Gap | undefined;
-
-        //min item
         for (const index of possibleIndexes(line.minItem - 1, 1)) {
             const gapsBySize = line.getGapsBySize(index);
             for (const gap of gapsBySize)
@@ -21,12 +18,6 @@ export default function lineGaps(lines: Line[]) {
         }
 
         for (const [gap, ls, skip] of line.getGaps(true)) {
-
-            if (gap.isFull) {
-                lastGap = gap;
-                continue;
-            }
-
             const { item, equality, index } = ls;
             if (noItemForGap(gap, equality, item))
                 line.addDots(gap.start, gap.end, Action.GapDots);
@@ -39,19 +30,19 @@ export default function lineGaps(lines: Line[]) {
                 const sum = line.sum(true, line.filterItems(range[0], range[1]));
 
                 const combinedEqualityNoItem = () => {
-                    if (equalityE && lastGap && lastGap.isFull && index > indexE) {
+                    if (equalityE && skip.lastGap && skip.lastGap.isFull() && index > indexE) {
                         const iS = line.sumWhile(indexE, gap, undefined, false);
                         if (!line.some(line.filterItems(indexE - iS, indexE - 1),
-                            f => !!lastGap && lastGap.is(f)))
+                            f => !!skip.lastGap && skip.lastGap.is(f)))
                             return true;
                     }
 
                     if (equality && index > indexE) {
                         const nextGap = line.findGapAtPos(gap.end + 1);
-                        if (nextGap && nextGap.isFull) {
+                        if (nextGap && nextGap.isFull()) {
                             const iS = line.sumWhile(index, gap);
                             if (!line.some(line.filterItems(index + 1, index + iS),
-                                f => nextGap.is(f)))
+                                s => nextGap.is(s)))
                             return true;
                         }
                     }
@@ -94,8 +85,6 @@ export default function lineGaps(lines: Line[]) {
                         line.addDot(gap.end - itemE.value, Action.CompleteItem);
                 }
             }
-
-            lastGap = gap;
         }
     }
 }

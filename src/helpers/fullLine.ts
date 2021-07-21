@@ -17,8 +17,6 @@ export function fullPart(line: Line, linePosition: number, startIndex: number,
 }
 
 export default function fullLine(lines: Line[]) {
-    for (const line of forEachLine(lines, l => l.lineValue === l.lineLength)) {
-        line.complete = true;
+    for (const line of forEachLine(lines, l => l.lineValue === l.lineLength))
         fullPart(line, 0, 0, line.lineItems - 1, Action.FullLine);
-    }
 }
