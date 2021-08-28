@@ -50,3 +50,4 @@ Thumbs.db
 
 # parcel cache
 .cache
+.parcel-cache
