@@ -1,4 +1,3 @@
-import 'regenerator-runtime/runtime';
 import { griddlers } from '../data';
 import solve from '../helpers/solver';
 

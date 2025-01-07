@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import ReactDOM from 'react-dom';
+import React, { StrictMode, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import Griddler from './src/index';
 import { griddlers } from './src/data/index';
 
@@ -45,4 +45,5 @@ function App() {
 }
 
 var mountNode = document.getElementById('inject-here');
-ReactDOM.render(<App />, mountNode);
+const root = createRoot(mountNode);
+root.render(<StrictMode><App /></StrictMode>, mountNode);
