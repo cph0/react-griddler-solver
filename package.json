@@ -12,7 +12,7 @@
     "testRoot": "./src/__tests__"
   },
   "dependencies": {
-    "ts-index-map": "^1.0.4",
+    "ts-index-map": "^1.0.5",
     "zustand": "^3.5.10"
   },
   "peerDependencies": {
